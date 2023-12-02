@@ -28,21 +28,58 @@ class God(AbstractUser):
 class Admin(models.Model):
 
     instituteName            =   models.CharField(max_length=200)
-    emailid                  =   models.EmailField(unique=True )
-    principal                =   models.CharField(max_length=50)
-    password                 =   models.CharField(unique=True)
-    students_no              =   models.IntegerField()
+    emailid                  =   models.EmailField()
+    password                 =   models.CharField()
+    address                  =   models.CharField(max_length=200)
     university               =   models.CharField(max_length=200)
-    teacher_no               =   models.IntegerField()
-    phn_number               =   models.IntegerField()
+    phn_number               =   models.CharField()
 
 
 
 
 
 class Department(models.Model):
-    admin              =    models.ForeignKey(Admin , on_delete=models.CASCADE,null=True , blank= True)
-    department_name    =    models.CharField()
+    department    =    models.CharField(max_length=50)
+
+
+
+class Subject(models.Model):
+    Subject   = models.CharField(max_length=50)
+
+
+
+class Semester(models.Model):
+    semester = models.CharField(max_length=12)
+
+
+
+class Teacher(models.Model):
+    department    = models.ForeignKey(Department , on_delete=models.CASCADE , null=True , blank=True)
+    Subject       = models.ForeignKey(Subject ,on_delete=models.CASCADE , null=True ,blank=True )
+    semester      = models.ForeignKey(Semester , on_delete=models.CASCADE , null=True , blank=True) 
+    name   = models.CharField(max_length=50)
+
+
+
+class Hod(models.Model):
+    teacher     = models.ForeignKey(Teacher , on_delete=models.CASCADE , null=True ,blank=True)
+    department  = models.ForeignKey(Department , on_delete=models.CASCADE , null=True , blank=True)
+
+
+
+
+
+class Student(models.Model):
+    Semester      = models.ForeignKey(Semester , models.CASCADE ,null=True , blank=True)
+    Subject       = models.ForeignKey(Subject,models.CASCADE,null=True , blank=True)
+    studentName   = models.CharField(max_length=50)
+    roll_no       = models.CharField(max_length=100)
+    email         = models.EmailField(unique=True)
+    number        = models.CharField(max_length=15)
+    
+    
+    
+
     
 
 
