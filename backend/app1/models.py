@@ -57,7 +57,14 @@ class Teacher(models.Model):
     department    = models.ForeignKey(Department , on_delete=models.CASCADE , null=True , blank=True)
     Subject       = models.ForeignKey(Subject ,on_delete=models.CASCADE , null=True ,blank=True )
     semester      = models.ForeignKey(Semester , on_delete=models.CASCADE , null=True , blank=True) 
-    name   = models.CharField(max_length=50)
+    name          = models.CharField(max_length=50)
+    email         = models.EmailField()
+    empid         = models.CharField(max_length=20)
+    image         = models.ImageField()
+    phoneNumber   = models.IntegerField()
+    password      = models.CharField(max_length=10)
+    acoe          = models.BooleanField(default=False)
+
 
 
 

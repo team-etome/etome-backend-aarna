@@ -46,14 +46,14 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 
-class Semester(serializers.ModelSerializer):
+class SemesterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Semester
         fields = ['semester']
 
 
-class Teacher(serializers.ModelSerializer):
+class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Semester
@@ -61,7 +61,7 @@ class Teacher(serializers.ModelSerializer):
 
 
 
-class Hod(serializers.ModelSerializer):
+class HodSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hod
@@ -69,7 +69,7 @@ class Hod(serializers.ModelSerializer):
 
 
 
-class Student(serializers.ModelSerializer):
+class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student

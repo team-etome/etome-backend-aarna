@@ -11,10 +11,6 @@ from django.contrib.auth import login
 from .serializers import *
 
 
-
-
-
-
 #Login of God(super user)
 class GodLoginView(APIView):
 
@@ -31,7 +27,7 @@ class GodLoginView(APIView):
         if user is not None and check_password(password , user.password):
             login(request , user)
 
-            admin_token = get_token(user , user_type='admin')
+            admin_token = get_token(user , user_type='god')
 
 
             return JsonResponse({'message': 'Login successful','token' : admin_token })
@@ -86,6 +82,34 @@ class AddAdmin(APIView):
         else:
             return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        
+#add subject and department by admin
+class AddDepartment(APIView):
+    def post(self , request):
+
+        data = request.data
+        department_data = data.get('department', [])
+        subject_data = data.get('Subject', [])
+        
+        if data:
+            # save departments
+            for department_name in department_data:
+                department = Department(name=department_name)
+                department.save()
+
+
+            # save subjects
+            for subject_name in subject_data:
+                subject = Subject(name=subject_name)
+                subject.save()
+
+            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        
+        
+     
+           
+
+       
         
 
         

@@ -17,6 +17,9 @@ urlpatterns = [
      path ('api/addadmin',views.AddAdmin.as_view() , name='addadmin'),
 
 
+     path('api/addDepartment',views.AddDepartment.as_view(),name='adddepartment'),
+
+
     
 
 
