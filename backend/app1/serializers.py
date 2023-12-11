@@ -61,13 +61,6 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 
-class HodSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Hod
-        fields = ['teacher',"department"]
-
-
 
 class StudentSerializer(serializers.ModelSerializer):
 

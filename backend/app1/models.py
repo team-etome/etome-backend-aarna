@@ -58,19 +58,20 @@ class Teacher(models.Model):
     Subject       = models.ForeignKey(Subject ,on_delete=models.CASCADE , null=True ,blank=True )
     semester      = models.ForeignKey(Semester , on_delete=models.CASCADE , null=True , blank=True) 
     name          = models.CharField(max_length=50)
-    email         = models.EmailField()
-    empid         = models.CharField(max_length=20)
-    image         = models.ImageField()
-    phoneNumber   = models.IntegerField()
-    password      = models.CharField(max_length=10)
+    email         = models.EmailField(unique=True,blank=True)
+    empid         = models.CharField(max_length=20,blank=True)
+    image         = models.ImageField(blank=True)
+    phoneNumber   = models.IntegerField(null=True)
+    password      = models.CharField(max_length=10,blank=True)
     acoe          = models.BooleanField(default=False)
+    hod           = models.BooleanField(default=False)
 
 
 
 
-class Hod(models.Model):
-    teacher     = models.ForeignKey(Teacher , on_delete=models.CASCADE , null=True ,blank=True)
-    department  = models.ForeignKey(Department , on_delete=models.CASCADE , null=True , blank=True)
+# class Hod(models.Model):
+#     teacher     = models.ForeignKey(Teacher , on_delete=models.CASCADE , null=True ,blank=True)
+#     department  = models.ForeignKey(Department , on_delete=models.CASCADE , null=True , blank=True)
 
 
 
@@ -83,6 +84,7 @@ class Student(models.Model):
     roll_no       = models.CharField(max_length=100)
     email         = models.EmailField(unique=True)
     number        = models.CharField(max_length=15)
+
     
     
     
