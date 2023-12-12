@@ -39,12 +39,17 @@ class Admin(models.Model):
 
 
 class Department(models.Model):
-    department    =    models.CharField(max_length=50)
+    department         =    models.CharField(max_length=50 , null=True)
+    department_head    =    models.CharField(max_length=50, null=True)
+
 
 
 
 class Subject(models.Model):
-    Subject   = models.CharField(max_length=50)
+    Subject         = models.CharField(max_length=50,null=True)
+    Subject_code    = models.IntegerField(null=True)
+    programme       = models.CharField(max_length=50 , null=True)  
+
 
 
 
@@ -60,7 +65,7 @@ class Teacher(models.Model):
     name          = models.CharField(max_length=50)
     email         = models.EmailField(unique=True,blank=True)
     empid         = models.CharField(max_length=20,blank=True)
-    image         = models.ImageField(blank=True)
+    image         = models.ImageField(blank=True,null=True , upload_to='teacher')
     phoneNumber   = models.IntegerField(null=True)
     password      = models.CharField(max_length=10,blank=True)
     acoe          = models.BooleanField(default=False)
@@ -84,6 +89,7 @@ class Student(models.Model):
     roll_no       = models.CharField(max_length=100)
     email         = models.EmailField(unique=True)
     number        = models.CharField(max_length=15)
+    
 
     
     
