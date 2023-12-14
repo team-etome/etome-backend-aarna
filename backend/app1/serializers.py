@@ -33,7 +33,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Department
-        fields = ['department']
+        fields = ['department','department_code','department_head']
 
 
 
@@ -42,7 +42,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ['Subject']
+        fields = ['Subject','Subject_code','programme']
 
 
 

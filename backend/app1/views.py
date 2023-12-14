@@ -9,6 +9,7 @@ from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from django.contrib.auth import login
 from .serializers import *
+from django.shortcuts import get_object_or_404
 
 
 #Login of God(super user)
@@ -82,30 +83,66 @@ class AddAdmin(APIView):
         else:
             return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        
-#add subject and department by admin
+
+#Add Department    
 class AddDepartment(APIView):
-    def post(self , request):
+    def post(self,request):
 
         data = request.data
-        department_data = data.get('department', [])
-        subject_data = data.get('Subject', [])
-        
-        if data:
-            # save departments
-            for department_name in department_data:
-                department = Department(name=department_name)
-                department.save()
+        department_Serializer = DepartmentSerializer(data = data)
 
-
-            # save subjects
-            for subject_name in subject_data:
-                subject = Subject(name=subject_name)
-                subject.save()
+        if department_Serializer.is_valid():
+            department_Serializer.save()
 
             return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
+        else:
+            return Response(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+
+    def get(self, request):
+        print("Entering GET request")
+
+        departments = Department.objects.all()
+
+        departmentDetails = []
+
+        for department in departments:
+            departmentDetails.append({
+
+                'id'           :  department.id,
+                'departmentName': department.department,
+                'departmentCode': department.department_code,
+                'department_head': department.department_head,
+            })
+
+        # print(departmentDetails)
+    
+        return JsonResponse(departmentDetails, safe=False)
+            
+
+
+
+#Add subject
+class AddSubject(APIView):
+    def post(self,request):
+
+        data = request.data
+        subject_Serializer = SubjectSerializer(data = data)
+
+        if subject_Serializer.is_valid():
+            subject_Serializer.save()
+
+            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        
+        else:
+            return Response(subject_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+
+
+
+
+
      
            
 
