@@ -9,7 +9,7 @@ from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from django.contrib.auth import login
 from .serializers import *
-from django.shortcuts import get_object_or_404
+# from django.shortcuts import get_object_or_404
 
 
 #Login of God(super user)
@@ -46,11 +46,11 @@ class AdminLoginView(APIView):
         email     =  request.data.get('emailid')
         password  =  request.data.get('password')
 
-        print(email , password ,".............")
+     
 
         try:
             user = Admin.objects.get(emailid = email)
-            print(user,"userrrrrrrrrrrr")
+         
         except Admin.DoesNotExist:
             user = None
 
@@ -87,7 +87,6 @@ class AddAdmin(APIView):
 #Add Department    
 class AddDepartment(APIView):
     def post(self,request):
-
         data = request.data
         department_Serializer = DepartmentSerializer(data = data)
 
@@ -101,9 +100,7 @@ class AddDepartment(APIView):
         
 
     def get(self, request):
-        print("Entering GET request")
-
-        departments = Department.objects.all()
+        departments = Department.objects.all().order_by('id')
 
         departmentDetails = []
 
@@ -116,10 +113,38 @@ class AddDepartment(APIView):
                 'department_head': department.department_head,
             })
 
-        # print(departmentDetails)
-    
         return JsonResponse(departmentDetails, safe=False)
-            
+    
+
+    def put(self , request):
+        data = request.data
+        id = data.get('id')
+        print(id,"hfddfddddddddddddd")
+        try:
+            department = Department.objects.get(id=id)
+        except Department.DoesNotExist:
+            return Response({"message": "Department not found"}, status=404)
+
+        if 'department' in data:
+            department.department = data['department']
+        if 'department_code' in data:
+            department.department_code = data['department_code']
+        if 'department_head' in data:
+            department.department_head = data['department_head']
+
+        department.save()
+
+        return Response({"message": "Department updated successfully"}, status=200)
+    
+
+    def delete(self, request, pk):
+        try:
+            department = Department.objects.get(id=pk)
+            department.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Department.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
 
 
 

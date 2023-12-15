@@ -14,7 +14,9 @@ urlpatterns = [
      path ('api/addadmin',views.AddAdmin.as_view() , name='addadmin'),
      path('api/addDepartment',views.AddDepartment.as_view(),name='addDepartment'),
      path('api/addSubject',views.AddSubject.as_view(),name='addSubject'),
-     path('api/department' , views.AddDepartment.as_view() , name = 'department'),
+     path('api/addDepartment/<int:pk>', views.AddDepartment.as_view(), name='delete_department'),
+
+  
 
 ]
 
