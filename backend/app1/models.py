@@ -87,10 +87,12 @@ class Teacher(models.Model):
 class Student(models.Model):
     Semester      = models.ForeignKey(Semester , models.CASCADE ,null=True , blank=True)
     Subject       = models.ForeignKey(Subject,models.CASCADE,null=True , blank=True)
+    department    = models.ForeignKey(Department , models.CASCADE , null=True , blank=True)
     studentName   = models.CharField(max_length=50)
-    roll_no       = models.CharField(max_length=100)
+    roll_no       = models.CharField(max_length=100,unique=True)
     email         = models.EmailField(unique=True)
     number        = models.CharField(max_length=15)
+    password      = models.CharField(max_length=10 , blank=True , null=True)
     
 
     

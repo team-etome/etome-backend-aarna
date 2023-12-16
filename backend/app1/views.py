@@ -55,7 +55,6 @@ class AdminLoginView(APIView):
             user = None
 
         if user is not None and check_password(password , user.password):
-            # login(request , user)
 
             admin_token = get_token(user , user_type='admin')
 
@@ -119,7 +118,6 @@ class AddDepartment(APIView):
     def put(self , request):
         data = request.data
         id = data.get('id')
-        print(id,"hfddfddddddddddddd")
         try:
             department = Department.objects.get(id=id)
         except Department.DoesNotExist:
