@@ -1,1 +1,19 @@
-/env/
+# Ignore Django migration files
+**/migrations/
+
+# Ignore Python bytecode files
+*.pyc
+__pycache__/
+
+# Ignore local development settings
+**/settings_local.py
+
+# Ignore IDE or editor-specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore sensitive or environment-specific configuration files
+.env
+.env.local
