@@ -12,6 +12,8 @@ urlpatterns = [
 
     path('', include('app1.urls')),
 
+    path('', include('flutter.urls')),
+
 
    
     

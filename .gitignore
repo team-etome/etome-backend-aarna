@@ -17,3 +17,4 @@ __pycache__/
 # Ignore sensitive or environment-specific configuration files
 .env
 .env.local
+/env
