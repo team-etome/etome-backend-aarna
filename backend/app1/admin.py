@@ -10,3 +10,6 @@ admin.site.register(Department)
 admin.site.register(Semester)
 admin.site.register(Subject)
 admin.site.register(Student)
+admin.site.register(Admin)
+admin.site.register(Teacher)
+
