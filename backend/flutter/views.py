@@ -24,7 +24,8 @@ class StudentLogin(APIView):
 
         except Student.DoesNotExist:
             user = None
-
+        # if user is not None and check_password(password,user.password):
+        #     return JsonResponse({'message': 'Login successful'})
         
         if user is not None :
             print("enterrrrrrrrrrrrrrr")
