@@ -39,13 +39,20 @@
      python manage.py makemigrations
      ```
 
-7. **Apply Migrations:**
+7. **Connect with SQL Server:**
+   -
+     ```
+     python manage.py sqlmigrate app1 0001
+     ```
+
+
+8. **Apply Migrations:** 
    - Migrate the database:
      ```
      python manage.py migrate
      ```
 
-8. **Run the Development Server:**
+9. **Run the Development Server:**
    - Ensure you are in the backend folder and execute the following command, replacing `<localserver:port>` with your desired local server and port:
      ```
      python manage.py runserver <localserver:port>
