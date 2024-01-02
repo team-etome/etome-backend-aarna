@@ -42,7 +42,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ['Subject','Subject_code','programme']
+        fields = ['subject','subject_code','programme']
 
 
 

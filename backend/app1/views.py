@@ -100,7 +100,7 @@ class AddDepartment(APIView):
 
     def get(self, request):
         departments = Department.objects.all().order_by('id')
-
+        print(departments , "departmentss")
         departmentDetails = []
 
         for department in departments:
@@ -150,7 +150,12 @@ class AddDepartment(APIView):
 class AddSubject(APIView):
     def post(self,request):
 
+      
+
         data = request.data
+
+      
+       
         subject_Serializer = SubjectSerializer(data = data)
 
         if subject_Serializer.is_valid():
@@ -161,6 +166,64 @@ class AddSubject(APIView):
         else:
             return Response(subject_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
+
+    def get(self,request):
+      
+        subjects = Subject.objects.all().order_by('id')
+        print(subjects)
+
+
+        subjectDetails = []
+
+        for subject in subjects:
+          
+            subjectDetails.append({
+
+                'id'       : subject.id,
+                'subjectName' : subject.subject,
+                'subjectCode'   : subject.subject_code,
+                'programme'   : subject.programme
+
+            })
+
+
+        return JsonResponse(subjectDetails, safe=False)
+
+
+    def put(self , request):
+
+        data = request.data
+        id   = data.get('id')
+
+      
+
+        try:
+            subject = Subject.objects.get(id = id)
+
+        except Subject.DoesNotExist:
+            return Response({"messaage" : "Subject not found"},status=404)
+        
+
+        if 'subject' in data:
+            subject.subject = data['subject']
+        if 'subject_code' in data:
+            subject.subject_code = data['subject_code']
+        if 'programme' in data:
+            subject.programme = data['programme']
+
+        subject.save()
+
+        return Response({"message": "Subject updated successfully"}, status=200)
+
+
+    def delete(self, request, pk):
+        print("enterrrrrrrrrr")
+        try:
+            subject = Subject.objects.get(id=pk)
+            subject.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Department.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 

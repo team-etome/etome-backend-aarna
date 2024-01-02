@@ -17,13 +17,14 @@ class StudentLogin(APIView):
         password = request.data.get('password')
 
         try:
-            user = Student.objects.get(roll_no = roll_no)
+            user = Student.objects.get(roll_no = roll_no , password = password)
 
         except Student.DoesNotExist:
             user = None
-
+        # if user is not None and check_password(password,user.password):
+        #     return JsonResponse({'message': 'Login successful'})
         
-        if user is not None and check_password(password,user.password):
+        if user is not None:
             return JsonResponse({'message': 'Login successful'})
         
         else:
