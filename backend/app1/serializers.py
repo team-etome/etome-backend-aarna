@@ -56,8 +56,27 @@ class SemesterSerializer(serializers.ModelSerializer):
 class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Semester
-        fields = ['department','Subject','semester','teacherName']
+        model = Teacher
+        fields = ['departments', 'subjects', 'semester', 'name', 'email', 'image', 'phoneNumber', 'password']
+
+    def create(self, validated_data):
+        departments_data = validated_data.pop('departments', [])
+        subjects_data = validated_data.pop('subjects', [])
+        password = validated_data.pop('password', None)
+        teacher = Teacher(**validated_data)
+
+        if password is not None:
+            teacher.password = make_password(password)
+        teacher.save()
+
+        for department in departments_data:
+            teacher.departments.add(department)
+        for subject in subjects_data:
+            teacher.subjects.add(subject)
+
+        return teacher
+
+       
 
 
 

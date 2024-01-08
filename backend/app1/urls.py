@@ -15,6 +15,9 @@ urlpatterns = [
      path('api/addSubject',views.AddSubject.as_view(),name='addSubject'),
      path('api/addDepartment/<int:pk>', views.AddDepartment.as_view(), name='delete_department'),
      path('api/addSubject/<int:pk>', views.AddSubject.as_view(), name='delete_subject'),
+     path('api/send', views.SendInvite.as_view(), name='SendInvite'),
+     path('api/addTeacher', views.AddTeacher.as_view(), name='AddTeacher'),
+     
 
   
 

@@ -8,8 +8,11 @@ from . token import get_token
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from django.contrib.auth import login
-from .serializers import *
-# from django.shortcuts import get_object_or_404
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+
 
 
 #Login of God(super user)
@@ -100,7 +103,7 @@ class AddDepartment(APIView):
 
     def get(self, request):
         departments = Department.objects.all().order_by('id')
-        print(departments , "departmentss")
+       
         departmentDetails = []
 
         for department in departments:
@@ -170,9 +173,7 @@ class AddSubject(APIView):
     def get(self,request):
       
         subjects = Subject.objects.all().order_by('id')
-        print(subjects)
-
-
+        
         subjectDetails = []
 
         for subject in subjects:
@@ -217,7 +218,6 @@ class AddSubject(APIView):
 
 
     def delete(self, request, pk):
-        print("enterrrrrrrrrr")
         try:
             subject = Subject.objects.get(id=pk)
             subject.delete()
@@ -226,13 +226,141 @@ class AddSubject(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
+class SendInvite(APIView):
+
+    def post(self,request):
+        
+        email_addresses = request.data.get('emails', [])
+
+        if not email_addresses:
+            return Response({"error": "No email addresses provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            for email in email_addresses:
+                self.send_mail(email)
+            return Response({"message": "Emails sent successfully."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+    def send_mail(self, recipient_email):
+        sender_mail = "development@resoluteindia.co.in"
+        password = "csjpwswsxucprkxb"
+        subject = "Invitation to Join Our Exciting Platform!"
 
-     
-           
+        html = """
+            <html>
+                 <head>
+        <style>
+            .email-card {
+                font-family: 'Arial', sans-serif;
+                max-width: 600px;
+                margin: 20px auto;
+                padding: 20px;
+                border: 1px solid #ddd;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+                text-align: center;
+            }
+            .email-card img {
+                width: 200px;
+                height: auto;
+                margin-bottom: 20px;
+            }
+            .email-card a {
+                background-color: #4CAF50;
+                color: white;
+                padding: 10px 20px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                border-radius: 8px;
+                margin-top: 20px;
+                margin-bottom: 20px; /* Adjusted space after button */
+            }
+            .email-card p {
+                color: #333;
+                line-height: 1.5;
+                margin-bottom: 10px; /* Reduced bottom margin for paragraphs */
+            }
+            .email-card p:last-child {
+                margin-bottom: 0; /* Removes bottom margin from the last paragraph */
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-card">
+            <h1>Welcome to Etome  </h1>
+            <img src="cid:etome_logo" alt="Etome Logo">
+            <p>In collaboration with [School Name]</p>
+            <p>We're thrilled to have you join our community of dedicated educators. As a member, you'll have access to exclusive resources, networking opportunities, and the latest insights in education.</p>
+            <a href="http://localhost:5173/tregister">Join Now</a>
+            <p>If you have any questions, feel free to contact us at any time.</p>
+            <p>Best Regards,<br>Team Etome</p>
+        </div>
+    </body>
+        </html>
+        """
+
+        msg = MIMEMultipart('alternative')
+        msg['From'] = sender_mail
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
 
        
+        msg.attach(MIMEText(html, 'html'))
+
+        with open('static\Etomeogo2.png ', 'rb') as f:
+            logo = MIMEImage(f.read())
+            logo.add_header('Content-ID', '<etome_logo>')
+            msg.attach(logo)
+
+        try:
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(sender_mail, password)
+            server.sendmail(sender_mail, recipient_email, msg.as_string())
+            server.quit()
+            print("Email sent successfully to", recipient_email)
+        except Exception as e:
+            print("Error sending email:", str(e))
+
+    
+
+
+#Add Teacher   
+class AddTeacher(APIView):
+    def post(self, request):
+        data = request.data.copy()
+        department_ids = data.get('department_id')
+        subject_ids = data.get('subject_id')
+
+        
+        if department_ids:
+            if isinstance(department_ids, str) and ',' in department_ids:
+                department_ids = [int(id.strip()) for id in department_ids.split(',')]
+            else:
+                department_ids = [int(department_ids)]
+            data.setlist('departments', department_ids)
+
+        if subject_ids:
+            if isinstance(subject_ids, str) and ',' in subject_ids:
+                subject_ids = [int(id.strip()) for id in subject_ids.split(',')]
+            else:
+                subject_ids = [int(subject_ids)]
+            data.setlist('subjects', subject_ids)
+
+        print("Processed data:", data)
+
+        teacher_serializer = TeacherSerializer(data=data)
+        if teacher_serializer.is_valid():
+            teacher_serializer.save()
+            return Response({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            print("Serializer errors:", teacher_serializer.errors)
+            return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         
 
         
