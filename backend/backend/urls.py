@@ -14,6 +14,8 @@ urlpatterns = [
 
     path('', include('flutter.urls')),
 
+    path('', include('teacher.urls')),
+
 
    
     

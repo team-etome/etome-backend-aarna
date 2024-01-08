@@ -55,15 +55,15 @@ class Semester(models.Model):
 
 
 class Teacher(models.Model):
-    department    =  models.ForeignKey(Department , on_delete=models.CASCADE , null=True , blank=True)
-    Subject       =  models.ForeignKey(Subject ,on_delete=models.CASCADE , null=True ,blank=True )
+    departments   =  models.ManyToManyField(Department, blank=True)
+    subjects      =  models.ManyToManyField(Subject, blank=True)
     semester      =  models.ForeignKey(Semester , on_delete=models.CASCADE , null=True , blank=True) 
     name          =  models.CharField(max_length=50)
     email         =  models.EmailField(unique=True,blank=True)
     empid         =  models.CharField(max_length=20,blank=True)
     image         =  models.ImageField(blank=True,null=True , upload_to='teacher')
     phoneNumber   =  models.IntegerField(null=True)
-    password      =  models.CharField(max_length=10,blank=True)
+    password      =  models.CharField(max_length=100,blank=True)
     acoe          =  models.BooleanField(default=False)
     hod           =  models.BooleanField(default=False)
     vetTeacher    =  models.BooleanField(default = False)
@@ -73,62 +73,74 @@ class Teacher(models.Model):
 
 
 class Student(models.Model):
-    Semester      =  models.ForeignKey(Semester , models.CASCADE ,null=True , blank=True)
-    Subject       =  models.ForeignKey(Subject,models.CASCADE,null=True , blank=True)
-    department    =  models.ForeignKey(Department , models.CASCADE , null=True , blank=True)
-    studentName   =  models.CharField(max_length=50)
-    roll_no       =  models.CharField(max_length=100,unique=True)
-    email         =  models.EmailField(unique=True)
-    number        =  models.CharField(max_length=15)
-    password      =  models.CharField(max_length=10 , blank=True , null=True),
-    dob           =  models.DateField(null = True)
+    Semester              =  models.ForeignKey(Semester , models.CASCADE ,null=True , blank=True)
+    Subject               =  models.ForeignKey(Subject,models.CASCADE,null=True , blank=True)
+    department            =  models.ForeignKey(Department , models.CASCADE , null=True , blank=True)
+    studentName           =  models.CharField(max_length=50)
+    roll_no               =  models.CharField(max_length=100,unique=True)
+    email                 =  models.EmailField(unique=True)
+    number                =  models.CharField(max_length=15 , null = True)
+    password              =  models.CharField(max_length=10 , blank=True , null=True),
+    dob                   =  models.DateField(null = True , blank = True )
+    parent_name           =  models.CharField(max_length=255 , null = True , blank = True) 
+    parent_email          =  models.EmailField(null = True , blank = True)
+    parent_contact_number =  models.CharField(max_length=15 , null = True , blank = True)
+    parent_relation       =  models.CharField(max_length=50 , null = True , blank = True)
     
 
-# class QuestionPaper(models.Model):
-#     examName        =  models.CharField(max_length = 15)
-#     department      =  models.ForeignKey(Department , models.CASCADE , null = True , blank = True)
-#     subject         =  models.ForeignKey(Subject , models.CASCADE , null = True , blank = True) 
-#     total_time      =  models.TimeField()
-#     exam_date       =  models.DateField()
-#     vetTeacher1     =  models.ForeignKey(Teacher , models.CASCADE , blank = True , null = True)
-#     send_Blueprint  =  models.BooleanField(default = False)
+class QuestionPaper(models.Model):
+    STATUS_CHOICES = (
+        ('send'  , 'send'),
+        ('submitted' , 'submitted'),
+        ('approved' , 'approved'),
+        ('declined' , 'declined'),
+    )
+    examName        =  models.CharField(max_length = 15)
+    department      =  models.ForeignKey(Department , models.CASCADE , null = True , blank = True)
+    subject         =  models.ForeignKey(Subject , models.CASCADE , null = True , blank = True) 
+    total_time      =  models.TimeField()
+    exam_date       =  models.DateField()
+    vetTeacher1     =  models.ForeignKey(Teacher , models.CASCADE , blank = True , null = True)
+    send_Blueprint  =  models.BooleanField(default = False)
+    status          =  models.CharField(choices = STATUS_CHOICES,default='send')
 
 
-# class Blueprint(models.Model):
-#     question_paper = models.OneToOneField(QuestionPaper, on_delete=models.CASCADE, related_name='blueprint')
-#     module_1_section_a = models.PositiveIntegerField(default=0)
-#     module_2_section_a = models.PositiveIntegerField(default=0)
-#     module_3_section_a = models.PositiveIntegerField(default=0)
-#     module_4_section_a = models.PositiveIntegerField(default=0)
-#     module_5_section_a = models.PositiveIntegerField(default=0)
+class Blueprint(models.Model):
+    question_paper = models.OneToOneField(QuestionPaper, on_delete=models.CASCADE, related_name='blueprint')
+
+    module_1_section_a = models.PositiveIntegerField(default=0)
+    module_2_section_a = models.PositiveIntegerField(default=0)
+    module_3_section_a = models.PositiveIntegerField(default=0)
+    module_4_section_a = models.PositiveIntegerField(default=0)
+    module_5_section_a = models.PositiveIntegerField(default=0)
     
-#     module_1_section_b = models.PositiveIntegerField(default=0)
-#     module_2_section_b = models.PositiveIntegerField(default=0)
-#     module_3_section_b = models.PositiveIntegerField(default=0)
-#     module_4_section_b = models.PositiveIntegerField(default=0)
-#     module_5_section_b = models.PositiveIntegerField(default=0)
+    module_1_section_b = models.PositiveIntegerField(default=0)
+    module_2_section_b = models.PositiveIntegerField(default=0)
+    module_3_section_b = models.PositiveIntegerField(default=0)
+    module_4_section_b = models.PositiveIntegerField(default=0)
+    module_5_section_b = models.PositiveIntegerField(default=0)
     
-#     module_1_section_c = models.PositiveIntegerField(default=0)
-#     module_2_section_c = models.PositiveIntegerField(default=0)
-#     module_3_section_c = models.PositiveIntegerField(default=0)
-#     module_4_section_c = models.PositiveIntegerField(default=0)
-#     module_5_section_c = models.PositiveIntegerField(default=0)
+    module_1_section_c = models.PositiveIntegerField(default=0)
+    module_2_section_c = models.PositiveIntegerField(default=0)
+    module_3_section_c = models.PositiveIntegerField(default=0)
+    module_4_section_c = models.PositiveIntegerField(default=0)
+    module_5_section_c = models.PositiveIntegerField(default=0)
     
-#     total_questions_section_a = models.PositiveIntegerField(default=0)
-#     total_questions_section_b = models.PositiveIntegerField(default=0)
-#     total_questions_section_c = models.PositiveIntegerField(default=0)
+    total_questions_section_a = models.PositiveIntegerField(default=0)
+    total_questions_section_b = models.PositiveIntegerField(default=0)
+    total_questions_section_c = models.PositiveIntegerField(default=0)
     
-#     compulsory_section_a = models.PositiveIntegerField(default=0)
-#     compulsory_section_b = models.PositiveIntegerField(default=0)
-#     compulsory_section_c = models.PositiveIntegerField(default=0)
+    compulsory_section_a = models.PositiveIntegerField(default=0)
+    compulsory_section_b = models.PositiveIntegerField(default=0)
+    compulsory_section_c = models.PositiveIntegerField(default=0)
     
    
-#     total_weightage_section_a = models.CharField(max_length=100)
-#     total_weightage_section_b = models.CharField(max_length=100)
-#     total_weightage_section_c = models.CharField(max_length=100)
+    total_weightage_section_a = models.CharField(max_length=100)
+    total_weightage_section_b = models.CharField(max_length=100)
+    total_weightage_section_c = models.CharField(max_length=100)
     
   
-#     approved = models.BooleanField(default=False)
+
 
 
 
