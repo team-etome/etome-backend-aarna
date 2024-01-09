@@ -84,5 +84,5 @@ class TeacherSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Student
-        fields = ['studentName',"roll_no"]
+        model  = Student
+        fields = ['image_name',"data"]
