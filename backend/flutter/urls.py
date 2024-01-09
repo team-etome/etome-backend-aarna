@@ -9,6 +9,9 @@ urlpatterns = [
 
 
     path('api/studentLogin',views.StudentLogin.as_view() , name='studentLogin'),
+    
+    path('api/scribble',views.Scribble.as_view() , name='scribble'),
+
 
 
 
