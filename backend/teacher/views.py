@@ -19,7 +19,6 @@ class TeacherDetails(APIView):
         teacherDetails = []
 
         for teacher in teachers:
-          
             departments = teacher.departments.all()
             department_names = [department.department for department in departments]
 
@@ -27,8 +26,22 @@ class TeacherDetails(APIView):
                 'name': teacher.name,
                 'departmentNames': department_names,  
                 'contact': teacher.phoneNumber,
+                'id'      : teacher.id
             })
 
         return JsonResponse(teacherDetails, safe=False)
+    
+
+    def delete(self , request , pk):
+        print("entered")
+
+        try:
+            teacher = Teacher.objects.get(id = pk)
+            print(teacher,'teachger')
+            teacher.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Department.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
 
 

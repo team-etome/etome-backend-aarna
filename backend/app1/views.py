@@ -351,14 +351,11 @@ class AddTeacher(APIView):
                 subject_ids = [int(subject_ids)]
             data.setlist('subjects', subject_ids)
 
-        print("Processed data:", data)
-
         teacher_serializer = TeacherSerializer(data=data)
         if teacher_serializer.is_valid():
             teacher_serializer.save()
             return Response({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
         else:
-            print("Serializer errors:", teacher_serializer.errors)
             return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
