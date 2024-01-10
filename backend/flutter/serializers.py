@@ -7,5 +7,5 @@ class DataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Byte
-        fields = ['email','password']
+        fields = ['image_name','data']
     
