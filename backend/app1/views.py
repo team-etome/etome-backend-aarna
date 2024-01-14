@@ -49,8 +49,6 @@ class AdminLoginView(APIView):
         email     =  request.data.get('emailid')
         password  =  request.data.get('password')
 
-     
-
         try:
             user = Admin.objects.get(emailid = email)
          
@@ -152,13 +150,7 @@ class AddDepartment(APIView):
 #Add subject
 class AddSubject(APIView):
     def post(self,request):
-
-      
-
         data = request.data
-
-      
-       
         subject_Serializer = SubjectSerializer(data = data)
 
         if subject_Serializer.is_valid():

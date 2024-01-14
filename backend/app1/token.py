@@ -8,6 +8,9 @@ def get_token(user, user_type):
         refresh['user_type'] = 'god'
     elif user_type == 'admin':
         refresh['user_type'] = 'admin'
+
+    elif user_type == 'teacher':
+        refresh['user_type'] = 'teacher'
     else:
         refresh['user_type'] = 'regular'  
 

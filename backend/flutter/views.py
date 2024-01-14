@@ -39,6 +39,7 @@ class StudentLogin(APIView):
 
 
 
+
 class Scribble(APIView):
     def post(self, request, *args, **kwargs):
         
@@ -77,7 +78,6 @@ class Scribble(APIView):
 
            
         
-    
 
 
 
