@@ -95,17 +95,21 @@ class QuestionPaper(models.Model):
         ('approved' , 'approved'),
         ('declined' , 'declined'),
     )
-    examName        =  models.CharField(max_length = 15)
+    examName        =  models.CharField(max_length = 150)
     department      =  models.ForeignKey(Department , models.CASCADE , null = True , blank = True)
     subject         =  models.ForeignKey(Subject , models.CASCADE , null = True , blank = True) 
-    total_time      =  models.TimeField()
+    semester        =  models.CharField(max_length = 15,null = True , blank = True)
+    total_time      =  models.CharField(max_length = 15)
     exam_date       =  models.DateField()
     vetTeacher1     =  models.ForeignKey(Teacher , models.CASCADE , blank = True , null = True)
     send_Blueprint  =  models.BooleanField(default = False)
+    term            =  models.CharField(max_length = 15,null=True,blank = True)
     status          =  models.CharField(choices = STATUS_CHOICES,default='send')
 
 
+
 class Blueprint(models.Model):
+
     question_paper = models.OneToOneField(QuestionPaper, on_delete=models.CASCADE, related_name='blueprint')
 
     module_1_section_a = models.PositiveIntegerField(default=0)

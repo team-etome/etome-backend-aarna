@@ -51,7 +51,6 @@ class AssignBlueprint(APIView):
 
         data = request.data
         questionpaper_serializer  = QuestionPaperSerializer(data = data)
-
         if questionpaper_serializer.is_valid():
             questionpaper_serializer.save(status='assigned')
 
@@ -59,6 +58,33 @@ class AssignBlueprint(APIView):
         
         else:
             return Response(questionpaper_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+    def get(self , request):
+
+        blueprints = QuestionPaper.objects.all().order_by('id')
+        blueprintDetails = []
+
+        for blueprint in blueprints:
+            department_name = blueprint.department.department
+            vetTeacher      = blueprint.vetTeacher1.name 
+            blueprintDetails.append({
+
+                'id'             :  blueprint.id,
+                'ExamName'       :  blueprint.examName,
+                'department'     :  department_name,
+                'exam_date'       :  blueprint.exam_date,
+                'semester'       :  blueprint.semester,
+                'term'           :  blueprint.term,
+                'status'         :  blueprint.status,
+                'vetTeacher'     :  vetTeacher
+            })
+
+        return JsonResponse(blueprintDetails, safe=False)
+    
+
+
+
         
 
 
@@ -103,25 +129,55 @@ class BlueprintReviewAPI(APIView):
         question_paper.save()
         return Response({'status': question_paper.status})
 
+
+class BlueprintDetailView(APIView):
+
+    def get(self, request, id):
+        try:
+            qpaper = QuestionPaper.objects.get(id=id)
+            serializer = QuestionPaperSerializer(qpaper)  
+            return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+        except QuestionPaper.DoesNotExist:
+            return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
 class TeacherLoginView(APIView):
 
     def post(self, request, *args, **kwargs):
-
         email = request.data.get('email')
         password = request.data.get('password')
 
-        print(email , password ,"ssssssssssssssss")
-
         try:
             teacher = Teacher.objects.get(email=email)
+            teacher_id = teacher.id
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
         if teacher is not None and check_password(password, teacher.password):
             teacher_token = get_token(teacher, user_type='teacher')
-            return JsonResponse({'message': 'Login successful', 'token': teacher_token})
-        
+            
+            try:
+                qpaper_assigned = QuestionPaper.objects.get(vetTeacher1_id=teacher_id)
+                qpaper_details = qpaper_assigned
+
+              
+                response_data = {
+                    'message': 'Login successful',
+                    'token': teacher_token,
+                    'qpaper_details': {
+                        'examName': qpaper_details.examName,
+                        'department': qpaper_details.department.department,
+                        'subject': qpaper_details.subject.subject,
+                        'semester': qpaper_details.semester,
+                        'total_time': qpaper_details.total_time,
+                        'exam_date': qpaper_details.exam_date,
+                        'vetTeacher1': qpaper_details.vetTeacher1.name,
+                        'term': qpaper_details.term,
+                        'status': qpaper_details.status,
+                    }
+                }
+                return JsonResponse(response_data)
+            except QuestionPaper.DoesNotExist:
+                return JsonResponse({'message': 'Login successful', 'token': teacher_token})
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
