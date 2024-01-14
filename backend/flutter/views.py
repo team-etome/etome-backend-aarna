@@ -39,32 +39,37 @@ class StudentLogin(APIView):
 
 
 
-class Scribble(APIView):
+# class Scribble(APIView):
+#     def post(self, request, *args, **kwargs):
+        
+#         try:
+#             data = request.data
+#             image_name = data.get('image_name')
+#             data_values = data.get('data')
+#             byte_instance = Byte.objects.create(image_name=image_name, datas=data_values)
+#             return JsonResponse({'message': 'Byte instance created successfully.'})
+
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=400)
+
+  
+#     def get(self, request, *args, **kwargs):
+      
     
-    def post(self, request):
-        image_name = request.data.get('image_name')
-        byte_data = request.data.get('data')
+#         bytes = Byte.objects.all()
 
-        if byte_data is not None:
-            byte_data = base64.b64decode(byte_data)
-            byte_instance = Byte(image_name=image_name, data=byte_data)
-            byte_instance.save()
+#         bytesDetails = []
 
-            return JsonResponse({'status': 'success'})
-        return JsonResponse({'status': 'error', 'message': 'No data provided'}, status=400)
+#         for byte in bytes:
+#             bytesDetails.append({
 
-    def get(self, request):
-        byte_objects = Byte.objects.all()
-
-        data_list = []
-        for byte_object in byte_objects:
-            encoded_data = base64.b64encode(byte_object.data).decode('utf-8')
-            data_list.append({
-                'image_name': byte_object.image_name,
-                'data': encoded_data
-            })
             
-        return JsonResponse(data_list, safe=False)
+#                 'image_name':byte.image_name,
+#                 'data':byte.datas,
+#             })
+#         print(bytesDetails)
+
+#         return JsonResponse(bytesDetails, safe=False)
 
 
 

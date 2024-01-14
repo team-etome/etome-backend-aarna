@@ -62,7 +62,7 @@ class Teacher(models.Model):
     email         =  models.EmailField(unique=True,blank=True)
     empid         =  models.CharField(max_length=20,blank=True)
     image         =  models.ImageField(blank=True,null=True , upload_to='teacher')
-    phoneNumber   =  models.IntegerField(null=True)
+    phoneNumber   =  models.CharField(null=True,max_length=10)
     password      =  models.CharField(max_length=100,blank=True)
     acoe          =  models.BooleanField(default=False)
     hod           =  models.BooleanField(default=False)
