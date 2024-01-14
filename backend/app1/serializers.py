@@ -75,6 +75,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             teacher.subjects.add(subject)
 
         return teacher
+    
 
 
 
