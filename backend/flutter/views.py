@@ -8,8 +8,8 @@ from django.http import JsonResponse
 from .models import *
 from .serializers import *
 import base64
-
-
+import json
+from django.db import transaction
 
 
 #Student Login
@@ -39,37 +39,45 @@ class StudentLogin(APIView):
 
 
 
-# class Scribble(APIView):
-#     def post(self, request, *args, **kwargs):
-        
-#         try:
-#             data = request.data
-#             image_name = data.get('image_name')
-#             data_values = data.get('data')
-#             byte_instance = Byte.objects.create(image_name=image_name, datas=data_values)
-#             return JsonResponse({'message': 'Byte instance created successfully.'})
 
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=400)
+class Scribble(APIView):
+    def post(self, request, *args, **kwargs):
+        
+        try:
+            data = request.data
+            image_name = data.get('image_name')
+            data_values = data.get('data')
+            byte_instance = Byte.objects.create(image_name=image_name, datas=data_values)
+            return JsonResponse({'message': 'Byte instance created successfully.'})
+
+        except Exception as e:
+            print(e , 'entereeeeeeed')
+            return JsonResponse({'error': str(e)}, status=400)
 
   
-#     def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
       
     
-#         bytes = Byte.objects.all()
+        bytes = Byte.objects.all()
 
-#         bytesDetails = []
+        bytesDetails = []
 
-#         for byte in bytes:
-#             bytesDetails.append({
+        for byte in bytes:
+            bytesDetails.append({
 
             
-#                 'image_name':byte.image_name,
-#                 'data':byte.datas,
-#             })
-#         print(bytesDetails)
+                'image_name':byte.image_name,
+                'data':byte.datas,
+            })
+        print(bytesDetails)
 
-#         return JsonResponse(bytesDetails, safe=False)
+        return JsonResponse(bytesDetails, safe=False)
+
+
+        
+
+           
+        
 
 
 

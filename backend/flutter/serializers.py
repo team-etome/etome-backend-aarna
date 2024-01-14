@@ -5,7 +5,9 @@
 
 # class DataSerializer(serializers.ModelSerializer):
 
-#     class Meta:
-#         model = Byte
-#         fields = ['image_name',"data"]
+
+    class Meta:
+        model = Byte
+        fields = ['image_name','data']
+
     
