@@ -8,9 +8,9 @@ from django.contrib.auth.hashers import make_password
 # class DataSerializer(serializers.ModelSerializer):
 
 
-class Meta:
-    model = Byte
-    fields = ['image_name','data']
+# class Meta:
+#     model = Byte
+#     fields = ['image_name','data']
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -43,5 +43,6 @@ class StudentSerializer(serializers.ModelSerializer):
     #     return instance
         
 class AnswerSerializer(serializers.ModelSerializer):
-    model = Byte
-    fields = ['studentId','questionCode','date','answerData']
+    class Meta:
+        model = Answer
+        fields = ['studentId', 'questionCode', 'date', 'answerData']
