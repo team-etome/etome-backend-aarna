@@ -100,6 +100,7 @@ class AddDepartment(APIView):
         
 
     def get(self, request):
+        
         departments = Department.objects.all().order_by('id')
        
         

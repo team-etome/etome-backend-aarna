@@ -111,6 +111,7 @@ class QuestionPaper(models.Model):
 class Blueprint(models.Model):
 
     question_paper = models.OneToOneField(QuestionPaper, on_delete=models.CASCADE, related_name='blueprint')
+    vet_teacher    = models.ForeignKey(Teacher,on_delete=models.CASCADE,null = True , blank =True)
 
     module_1_section_a = models.PositiveIntegerField(default=0)
     module_2_section_a = models.PositiveIntegerField(default=0)

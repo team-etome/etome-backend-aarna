@@ -89,45 +89,45 @@ class AssignBlueprint(APIView):
 
 
 
-class BlueprintDetailAPI(APIView):
+# class BlueprintDetailAPI(APIView):
     # permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
-        question_paper = get_object_or_404(QuestionPaper, pk=pk)
-        if request.user != question_paper.vetTeacher1.user:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        blueprint, created = Blueprint.objects.get_or_create(question_paper=question_paper)
-        serializer = BlueprintSerializer(blueprint)
-        return Response(serializer.data)
+    # def get(self, request, pk):
+    #     question_paper = get_object_or_404(QuestionPaper, pk=pk)
+    #     if request.user != question_paper.vetTeacher1.user:
+    #         return Response(status=status.HTTP_403_FORBIDDEN)
+    #     blueprint, created = Blueprint.objects.get_or_create(question_paper=question_paper)
+    #     serializer = BlueprintSerializer(blueprint)
+    #     return Response(serializer.data)
 
-    def put(self, request, pk):
-        question_paper = get_object_or_404(QuestionPaper, pk=pk)
-        if request.user != question_paper.vetTeacher1.user:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        blueprint = get_object_or_404(Blueprint, question_paper=question_paper)
-        serializer = BlueprintSerializer(blueprint, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            question_paper.status = 'submitted'
-            question_paper.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # def put(self, request, pk):
+    #     question_paper = get_object_or_404(QuestionPaper, pk=pk)
+    #     if request.user != question_paper.vetTeacher1.user:
+    #         return Response(status=status.HTTP_403_FORBIDDEN)
+    #     blueprint = get_object_or_404(Blueprint, question_paper=question_paper)
+    #     serializer = BlueprintSerializer(blueprint, data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         question_paper.status = 'submitted'
+    #         question_paper.save()
+    #         return Response(serializer.data)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 
-class BlueprintReviewAPI(APIView):
+# class BlueprintReviewAPI(APIView):
     # permission_classes = [IsAdminUser]
-    def post(self, request, pk):
-        question_paper = get_object_or_404(QuestionPaper, pk=pk)
-        action = request.data.get('action')
-        if action == 'approve':
-            question_paper.status = 'approved'
-        elif action == 'decline':
-            question_paper.status = 'declined'
-        else:
-            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
-        question_paper.save()
-        return Response({'status': question_paper.status})
+    # def post(self, request, pk):
+    #     question_paper = get_object_or_404(QuestionPaper, pk=pk)
+    #     action = request.data.get('action')
+    #     if action == 'approve':
+    #         question_paper.status = 'approved'
+    #     elif action == 'decline':
+    #         question_paper.status = 'declined'
+    #     else:
+    #         return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+    #     question_paper.save()
+    #     return Response({'status': question_paper.status})
 
 
 class BlueprintDetailView(APIView):
@@ -165,6 +165,7 @@ class TeacherLoginView(APIView):
                     'message': 'Login successful',
                     'token': teacher_token,
                     'qpaper_details': {
+                        'id'      : qpaper_details.id,
                         'examName': qpaper_details.examName,
                         'department': qpaper_details.department.department,
                         'subject': qpaper_details.subject.subject,
@@ -172,6 +173,7 @@ class TeacherLoginView(APIView):
                         'total_time': qpaper_details.total_time,
                         'exam_date': qpaper_details.exam_date,
                         'vetTeacher1': qpaper_details.vetTeacher1.name,
+                        'teacherid'  : qpaper_details.vetTeacher1.id,
                         'term': qpaper_details.term,
                         'status': qpaper_details.status,
                     }
@@ -181,3 +183,39 @@ class TeacherLoginView(APIView):
                 return JsonResponse({'message': 'Login successful', 'token': teacher_token})
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
+        
+
+
+class QpaperModule(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        blueprintSerializer = BlueprintSerializer(data = data)
+
+        if blueprintSerializer.is_valid():
+            
+            blueprint_instance = blueprintSerializer.save()
+
+            question_paper_instance = blueprint_instance.question_paper
+            question_paper_instance.status = 'submitted'
+            question_paper_instance.save()
+
+            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(blueprintSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+    def get(self, request, qpaperid,*args, **kwargs ):
+        try:
+            blueprints = Blueprint.objects.get(question_paper_id = qpaperid)
+            serializer = BlueprintSerializer(blueprints)  
+            return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+        except Blueprint.DoesNotExist:
+            return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+      
+
+        
+        
+        
