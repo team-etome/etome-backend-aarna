@@ -9,3 +9,13 @@ class Byte(models.Model):
 
 
 
+class Answer(models.Model):
+
+    studentId     = models.CharField(max_length=50)
+    questionCode  = models.CharField(max_length=50)
+    date          = models.CharField(max_length=50)
+    answerData    = models.JSONField()
+    
+
+
+

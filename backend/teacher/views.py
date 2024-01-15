@@ -187,6 +187,7 @@ class TeacherLoginView(APIView):
 
 
 class QpaperModule(APIView):
+
     def post(self, request, *args, **kwargs):
         data = request.data
         blueprintSerializer = BlueprintSerializer(data = data)
@@ -206,11 +207,35 @@ class QpaperModule(APIView):
 
     def get(self, request, qpaperid,*args, **kwargs ):
         try:
-            blueprints = Blueprint.objects.get(question_paper_id = qpaperid)
+            blueprints    = Blueprint.objects.get(question_paper_id = qpaperid)
+            qpaper_status = blueprints.question_paper.status
             serializer = BlueprintSerializer(blueprints)  
-            return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+            data = serializer.data
+            data["qpaper_status"] = qpaper_status
+            return JsonResponse(data, status=status.HTTP_200_OK )
         except Blueprint.DoesNotExist:
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    
+    def put(self, request, qpaperid):
+        try:
+            question_paper = QuestionPaper.objects.get(pk=qpaperid)
+        except QuestionPaper.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        status_action = data.get('status_action', None)
+
+        if status_action == "approve":
+            question_paper.status = "approved"
+            question_paper.save()
+            return Response(status=status.HTTP_200_OK)
+        elif status_action == "decline":
+            question_paper.status = "declined"
+            question_paper.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
         
 
 

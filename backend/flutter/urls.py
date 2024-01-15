@@ -9,6 +9,8 @@ urlpatterns = [
 
 
     path('api/studentLogin',views.StudentLogin.as_view() , name='studentLogin'),
+    path('api/addstudent',views.AddStudent.as_view() , name='addstudent'),
+    path('api/submitAnswer',views.Answer.as_view() , name='submitAnswer'),
     
     # path('api/scribble',views.Scribble.as_view() , name='scribble'),
 
