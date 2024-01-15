@@ -5,7 +5,7 @@ from app1.models import *
 from app1.serializers import *
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
-from .models import *
+from flutter.models import *
 from .serializers import *
 import base64
 import json
@@ -92,20 +92,28 @@ class Scribble(APIView):
 
 
         
-class Answer(APIView):
+class Answers(APIView):
 
     def post(self ,request):
 
+        print('enterrrrrrrrrrrrrrrr')
+
+
         data = request.data
 
+      
+
         answer_serializer = AnswerSerializer(data = data)
+        print(answer_serializer,'serializer')
 
         if answer_serializer.is_valid():
-            answer_serializer.save
+            print('reached 1')
+            answer_serializer.save()
         
-            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
-            return Response(answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            print(answer_serializer.errors, 'errorrrrrr')
+            return JsonResponse(answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     
     def get(self , request):
@@ -127,7 +135,7 @@ class Answer(APIView):
 
         return JsonResponse(answerdetails, safe=False)
 
-
+    
 
            
         
