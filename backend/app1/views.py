@@ -100,7 +100,7 @@ class AddDepartment(APIView):
         
 
     def get(self, request):
-        
+
         departments = Department.objects.all().order_by('id')
        
         
@@ -153,6 +153,7 @@ class AddDepartment(APIView):
 class AddSubject(APIView):
     def post(self,request):
         data = request.data
+        print(data , "dataaaaaaaaaaaaaa")
         subject_Serializer = SubjectSerializer(data = data)
 
         if subject_Serializer.is_valid():
@@ -177,7 +178,8 @@ class AddSubject(APIView):
                 'id'       : subject.id,
                 'subjectName' : subject.subject,
                 'subjectCode'   : subject.subject_code,
-                'programme'   : subject.programme
+                'programme'   : subject.programme,
+                'semester'    : subject.semester , 
 
             })
 
@@ -188,9 +190,8 @@ class AddSubject(APIView):
     def put(self , request):
 
         data = request.data
+        print(data ,"aaaaaaaaaaaaaaaa")
         id   = data.get('id')
-
-      
 
         try:
             subject = Subject.objects.get(id = id)
@@ -205,6 +206,9 @@ class AddSubject(APIView):
             subject.subject_code = data['subject_code']
         if 'programme' in data:
             subject.programme = data['programme']
+
+        if 'semester' in data:
+            subject.semester = data['semester']
 
         subject.save()
 

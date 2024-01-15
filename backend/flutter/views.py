@@ -10,6 +10,26 @@ from .serializers import *
 import base64
 import json
 from django.db import transaction
+from rest_framework import status
+
+
+
+
+class AddStudent(APIView):
+    def post(self , request ):
+        print("Enterrrrrrr")
+        data = request.data
+        print(data,"qqqqqqqqqqqqqqqq")
+        student_serializer = StudentSerializer(data = data)
+
+        if student_serializer.is_valid():
+            student_serializer.save()
+
+            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 #Student Login
@@ -17,13 +37,10 @@ class StudentLogin(APIView):
 
     def post(self , request , *args , **kwargs):
         roll_no  = request.data.get('roll_no')
-        password = request.data.get('password')
-
+        password = request.data.get('dob')
 
         try:
-            user = Student.objects.get(roll_no = roll_no , password = password)
-
-            print(user,"..user")
+            user = Student.objects.get(roll_no = roll_no , dob = password)
 
         except Student.DoesNotExist:
             user = None
@@ -75,6 +92,42 @@ class Scribble(APIView):
 
 
         
+class Answer(APIView):
+
+    def post(self ,request):
+
+        data = request.data
+
+        answer_serializer = AnswerSerializer(data = data)
+
+        if answer_serializer.is_valid():
+            answer_serializer.save
+        
+            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    
+    def get(self , request):
+
+        answers = Answer.objects.all()
+
+        answerdetails = []
+
+        for answer in answers:
+            answerdetails.append({
+
+                'studentId':answer.studentId,
+                'questionCode':answer.questionCode,
+                'date':answer.date,
+                'answerData':answer.answerData,
+
+            })
+        
+
+        return JsonResponse(answerdetails, safe=False)
+
+
 
            
         

@@ -42,7 +42,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ['subject','subject_code','programme']
+        fields = ['subject','subject_code','programme' , 'department' , 'semester' , 'elective']
 
 
 
@@ -57,7 +57,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['departments', 'subjects', 'semester', 'name', 'email', 'image', 'phoneNumber', 'password']
+        fields = ['departments', 'subjects', 'semester', 'name', 'email', 'image', 'phoneNumber', 'password',]
 
     def create(self, validated_data):
         departments_data = validated_data.pop('departments', [])
