@@ -134,6 +134,51 @@ class Answers(APIView):
         
 
         return JsonResponse(answerdetails, safe=False)
+class Evaluations(APIView):
+
+    def post(self ,request):
+
+        print('enterrrrrrrrrrrrrrrr')
+
+
+
+        data = request.data
+
+        print(data,'dataaaaaaaaaa')
+
+        evaluation_serializer = EvaluationSerializer(data = data)
+        print(evaluation_serializer,'serializer')
+
+        if evaluation_serializer.is_valid():
+            print('reached 1')
+            evaluation_serializer.save()
+        
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            print(evaluation_serializer.errors, 'errorrrrrr')
+            return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    
+    def get(self , request):
+
+        answers = Evaluation.objects.all()
+
+        answerdetails = []
+
+        for answer in answers:
+            answerdetails.append({
+
+                'studentId':answer.studentId,
+                'questionCode':answer.questionCode,
+                'teacherId':answer.teacherId,
+                'markData':answer.markData,
+                'totalMark':answer.totalMark,
+                'date':answer.date,
+
+            })
+        
+
+        return JsonResponse(answerdetails, safe=False)
 
     
 
