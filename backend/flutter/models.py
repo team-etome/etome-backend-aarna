@@ -16,13 +16,12 @@ class Answer(models.Model):
     answerData    = models.JSONField()
     
 
-class Evaluations(models.Model):
-
+class Evaluation(models.Model):
     studentId     = models.CharField(max_length=50)
     questionCode  = models.CharField(max_length=50)
-    mark          = models.CharField(max_length=50)
-    
-
-
+    teacherId     = models.CharField(max_length=50)
+    markData      = models.JSONField()
+    totalMark     = models.CharField(max_length=50)
+    date     = models.CharField(max_length=50)
 
 
