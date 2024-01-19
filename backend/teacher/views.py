@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login
 from .serializers import *
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 # from rest_framework.permissions import IsAuthenticated
 
 
@@ -25,11 +26,18 @@ class TeacherDetails(APIView):
             departments = teacher.departments.all()
             department_names = [department.department for department in departments]
 
+            if teacher.image:
+                image_url = request.build_absolute_uri(settings.MEDIA_URL + str(teacher.image))
+                print(image_url,"image urllll")
+            else:
+                image_url = None
+
             teacherDetails.append({
                 'name': teacher.name,
                 'departmentNames': department_names,  
                 'contact': teacher.phoneNumber,
-                'id'      : teacher.id
+                'id'      : teacher.id,
+                'image'   : image_url
             })
 
         return JsonResponse(teacherDetails, safe=False)
@@ -83,51 +91,6 @@ class AssignBlueprint(APIView):
         return JsonResponse(blueprintDetails, safe=False)
     
 
-
-
-        
-
-
-
-# class BlueprintDetailAPI(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    # def get(self, request, pk):
-    #     question_paper = get_object_or_404(QuestionPaper, pk=pk)
-    #     if request.user != question_paper.vetTeacher1.user:
-    #         return Response(status=status.HTTP_403_FORBIDDEN)
-    #     blueprint, created = Blueprint.objects.get_or_create(question_paper=question_paper)
-    #     serializer = BlueprintSerializer(blueprint)
-    #     return Response(serializer.data)
-
-    # def put(self, request, pk):
-    #     question_paper = get_object_or_404(QuestionPaper, pk=pk)
-    #     if request.user != question_paper.vetTeacher1.user:
-    #         return Response(status=status.HTTP_403_FORBIDDEN)
-    #     blueprint = get_object_or_404(Blueprint, question_paper=question_paper)
-    #     serializer = BlueprintSerializer(blueprint, data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         question_paper.status = 'submitted'
-    #         question_paper.save()
-    #         return Response(serializer.data)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-
-# class BlueprintReviewAPI(APIView):
-    # permission_classes = [IsAdminUser]
-    # def post(self, request, pk):
-    #     question_paper = get_object_or_404(QuestionPaper, pk=pk)
-    #     action = request.data.get('action')
-    #     if action == 'approve':
-    #         question_paper.status = 'approved'
-    #     elif action == 'decline':
-    #         question_paper.status = 'declined'
-    #     else:
-    #         return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
-    #     question_paper.save()
-    #     return Response({'status': question_paper.status})
 
 
 class BlueprintDetailView(APIView):
