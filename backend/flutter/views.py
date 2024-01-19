@@ -57,52 +57,46 @@ class StudentLogin(APIView):
 
 
 
-class Scribble(APIView):
-    def post(self, request, *args, **kwargs):
+# class Scribble(APIView):
+#     def post(self, request, *args, **kwargs):
         
-        try:
-            data = request.data
-            image_name = data.get('image_name')
-            data_values = data.get('data')
-            byte_instance = Byte.objects.create(image_name=image_name, datas=data_values)
-            return JsonResponse({'message': 'Byte instance created successfully.'})
+#         try:
+#             data = request.data
+#             image_name = data.get('image_name')
+#             data_values = data.get('data')
+#             byte_instance = Byte.objects.create(image_name=image_name, datas=data_values)
+#             return JsonResponse({'message': 'Byte instance created successfully.'})
 
-        except Exception as e:
-            print(e , 'entereeeeeeed')
-            return JsonResponse({'error': str(e)}, status=400)
+#         except Exception as e:
+#             print(e , 'entereeeeeeed')
+#             return JsonResponse({'error': str(e)}, status=400)
 
   
-    def get(self, request, *args, **kwargs):
+#     def get(self, request, *args, **kwargs):
       
     
-        bytes = Byte.objects.all()
+#         bytes = Byte.objects.all()
 
-        bytesDetails = []
+#         bytesDetails = []
 
-        for byte in bytes:
-            bytesDetails.append({
+#         for byte in bytes:
+#             bytesDetails.append({
 
             
-                'image_name':byte.image_name,
-                'data':byte.datas,
-            })
-        print(bytesDetails)
+#                 'image_name':byte.image_name,
+#                 'data':byte.datas,
+#             })
+#         print(bytesDetails)
 
-        return JsonResponse(bytesDetails, safe=False)
+#         return JsonResponse(bytesDetails, safe=False)
 
 
         
 class Answers(APIView):
 
     def post(self ,request):
-
         print('enterrrrrrrrrrrrrrrr')
-
-
         data = request.data
-
-      
-
         answer_serializer = AnswerSerializer(data = data)
         print(answer_serializer,'serializer')
 
@@ -138,13 +132,8 @@ class Evaluations(APIView):
 
     def post(self ,request):
 
-        print('enterrrrrrrrrrrrrrrr')
-
-
-
+      
         data = request.data
-
-        print(data,'dataaaaaaaaaa')
 
         evaluation_serializer = EvaluationSerializer(data = data)
         print(evaluation_serializer,'serializer')
