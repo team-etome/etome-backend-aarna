@@ -52,7 +52,6 @@ class StudentExaminationLogin(APIView):
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
         
-        
 class Answers(APIView):
     def post(self ,request):
         print('enterrrrrrrrrrrrrrrr')
