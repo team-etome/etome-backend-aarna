@@ -1,11 +1,15 @@
 from django.db import models
+from app1.models import *
 
 
 
-class Byte(models.Model):
-    image_name   = models.CharField(max_length=50)
-    data         = models.BinaryField()
-    datas         = models.JSONField(null=True,blank=True)
+class Questions(models.Model):
+    questionpaper = models.ForeignKey(QuestionPaper , models.CASCADE , null = True , blank = True )
+    questioncode  = models.CharField(max_length = 10 )
+    
+class QuestionImage(models.Model):
+    question  = models.ForeignKey(Questions,models.CASCADE , null = True , blank = True)
+    image     = models.ImageField(upload_to='question')
 
 
 
