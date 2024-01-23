@@ -85,7 +85,8 @@ class AssignBlueprint(APIView):
                 'semester'       :  blueprint.semester,
                 'term'           :  blueprint.term,
                 'status'         :  blueprint.status,
-                'vetTeacher'     :  vetTeacher
+                'vetTeacher'     :  vetTeacher,
+                'time'           :  blueprint.total_time
             })
 
         return JsonResponse(blueprintDetails, safe=False)
@@ -202,7 +203,81 @@ class QpaperModule(APIView):
         
 
 
-      
+class SeatingArrangementView(APIView):
+    
+    def patterned_distribution(self, dept_students, rows, cols, students_per_bench):
+        # Check there are enough students in each department list
+        assert all(len(students) >= students_per_bench for students in dept_students.values())
+
+        # Create the seating arrangement following the provided pattern
+        seating_arrangement = []
+        dept_keys = list(dept_students.keys())
+        total_depts = len(dept_keys)
+
+        for bench_num in range(rows * cols):
+            bench_students = []
+            for student_num in range(students_per_bench):
+                # Calculate department index (cycle through departments)
+                dept_index = (bench_num + student_num) % total_depts
+                # Get the department key based on current index
+                dept_key = dept_keys[dept_index]
+                # Append the student to the bench list and remove from department list
+                if dept_students[dept_key]:
+                    bench_students.append(dept_students[dept_key].pop(0))
+            # Add the bench list to the seating arrangement
+            seating_arrangement.append(bench_students)
+
+        return seating_arrangement
+
+    def sequential_distribution(self, dept_students, rows, cols, students_per_bench):
+        # Ensure there are enough students in each list for the seating arrangement
+        assert all(len(students) >= rows for students in dept_students.values())
+
+        # Create the seating arrangement following the sequential pattern
+        seating_arrangement = []
+        for bench_num in range(rows * cols):
+            bench_students = []
+            for dept_key in dept_students.keys():
+                # Get the student number based on the row
+                student_num = bench_num // cols
+                # Assign the student to the bench
+                if student_num < len(dept_students[dept_key]):
+                    bench_students.append(dept_students[dept_key][student_num])
+                else:
+                    bench_students.append(None)  # Append None if there are no more students
+            # Add the bench list to the seating arrangement
+            seating_arrangement.append(bench_students)
+
+        return seating_arrangement
+
+    def post(self, request, *args, **kwargs):
+        # Extract data from request.data
+        pattern_type = request.data.get('pattern_type')
+        dept_students = {
+            'A': request.data.get('A_students'),
+            'B': request.data.get('B_students'),
+            'C': request.data.get('C_students'),
+        }
+        rows = request.data.get('rows')
+        cols = request.data.get('cols')
+        students_per_bench = request.data.get('students_per_bench')
+
+        # Validate input data here
+
+        # Check for valid pattern type and call the appropriate distribution function
+        if pattern_type == 'patterned':
+            seating_arrangement = self.patterned_distribution(dept_students, rows, cols, students_per_bench)
+        elif pattern_type == 'sequential':
+            seating_arrangement = self.sequential_distribution(dept_students, rows, cols, students_per_bench)
+        else:
+            # Handle invalid pattern type
+            return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'seating_arrangement': seating_arrangement
+        }, status=status.HTTP_200_OK)
+
+
 
         
         
