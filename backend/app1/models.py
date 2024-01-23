@@ -45,7 +45,7 @@ class Subject(models.Model):
     subject         = models.CharField(max_length=50,null=True)
     subject_code    = models.CharField(null=True)
     programme       = models.CharField(max_length=50 , null=True)
-    department      = models.ForeignKey(Department , models.CASCADE, null=True , blank=True)
+    department      = models.ForeignKey(Department , on_delete=models.CASCADE, null=True , blank=True)
     semester        = models.CharField(max_length = 50 , null=True , blank=True)
     elective        = models.CharField(max_length =20 , null=True , blank=True)
 
@@ -79,7 +79,7 @@ class Student(models.Model):
     studentName           =  models.CharField(max_length=50)
     roll_no               =  models.CharField(max_length=100,unique=True)
     semester              =  models.CharField(max_length=100,null=True , blank=True)
-    department            =  models.ForeignKey(Department , models.CASCADE , null=True , blank=True)
+    department            =  models.ForeignKey(Department ,on_delete=models.CASCADE , null=True , blank=True)
     number                =  models.CharField(max_length=15 ,blank= True , null = True)
     email                 =  models.EmailField(unique=True)
     gender                =  models.CharField(max_length=15 ,blank= True , null = True)
@@ -90,7 +90,8 @@ class Student(models.Model):
     parent_contact_number =  models.CharField(max_length=15 , null = True , blank = True)
     parent_relation       =  models.CharField(max_length=50 , null = True , blank = True)
     image                 =  models.ImageField(blank=True,null=True , upload_to='student')
-    address               =  models.CharField(max_length=200, null = True , blank = True)    
+    address               =  models.CharField(max_length=200, null = True , blank = True)   
+    selected              =  models.BooleanField(default = False) 
 
 class QuestionPaper(models.Model):
     STATUS_CHOICES = (
@@ -100,12 +101,12 @@ class QuestionPaper(models.Model):
         ('declined' , 'declined'),
     )
     examName        =  models.CharField(max_length = 150)
-    department      =  models.ForeignKey(Department , models.CASCADE , null = True , blank = True)
-    subject         =  models.ForeignKey(Subject , models.CASCADE , null = True , blank = True) 
+    department      =  models.ForeignKey(Department ,on_delete=models.CASCADE , null = True , blank = True)
+    subject         =  models.ForeignKey(Subject ,on_delete=models.CASCADE , null = True , blank = True) 
     semester        =  models.CharField(max_length = 15,null = True , blank = True)
     total_time      =  models.CharField(max_length = 15)
     exam_date       =  models.DateField()
-    vetTeacher1     =  models.ForeignKey(Teacher , models.CASCADE , blank = True , null = True)
+    vetTeacher1     =  models.ForeignKey(Teacher ,on_delete=models.CASCADE, blank = True , null = True)
     send_Blueprint  =  models.BooleanField(default = False)
     term            =  models.CharField(max_length = 15,null=True,blank = True)
     status          =  models.CharField(choices = STATUS_CHOICES,default='send')
