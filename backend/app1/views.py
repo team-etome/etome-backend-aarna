@@ -351,7 +351,11 @@ class AddTeacher(APIView):
 
         teacher_serializer = TeacherSerializer(data=data)
         if teacher_serializer.is_valid():
-            teacher_serializer.save()
+            teacher = teacher_serializer.save()
+            image_url = teacher.image.url
+
+            print(image_url,"imageeeeeeeeeeeeeeeeeeeeeeeeeeee")
+
             return Response({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -361,8 +365,6 @@ class AddTeacher(APIView):
         
 
         
-
-
 
 
 
