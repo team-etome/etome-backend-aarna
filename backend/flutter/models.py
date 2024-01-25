@@ -36,12 +36,12 @@ class AssignEvaluation(models.Model):
     
 
 class Evaluation(models.Model):
-    student        =  models.ForeignKey(Student,on_delete=models.CASCADE , null = True , blank = True )
-    question_code  =  models.CharField(max_length=50)
-    teacher        =  models.ForeignKey(Teacher , on_delete=models.CASCADE,null = True , blank = True )
-    mark_data      =  models.JSONField()
-    total_mark     =  models.CharField(max_length=50)
-    date           =  models.CharField(max_length=50)
+    student       = models.ForeignKey(Student ,on_delete=models.CASCADE, null = True, blank= True)
+    questionCode  = models.CharField(max_length=50)
+    teacher       = models.ForeignKey(Teacher , on_delete=models.CASCADE, null = True, blank= True)
+    markData      = models.JSONField()
+    totalMark     = models.CharField(max_length=50)
+    date          = models.CharField(max_length=50)
 
 
 class SeatingArrangement(models.Model):
