@@ -35,7 +35,7 @@ class AssignEvaluation(models.Model):
     
 
 class Evaluation(models.Model):
-    student       = models.ForeignKey(Student,on_delete=models.CASCADE )
+    student       = models.ForeignKey(Student ,on_delete=models.CASCADE, null = True, blank= True)
     questionCode  = models.CharField(max_length=50)
     teacher       = models.ForeignKey(Teacher , on_delete=models.CASCADE)
     markData      = models.JSONField()
