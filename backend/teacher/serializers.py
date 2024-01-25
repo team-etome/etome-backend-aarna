@@ -6,7 +6,7 @@ from app1.models import *
 class QuestionPaperSerializer(serializers.ModelSerializer):
      class Meta:
         model   =  QuestionPaper
-        fields = ['id','exam_name','department','subject','total_time','exam_date','vet_teacher1','term','semester']
+        fields = ['id','exam_name','department','subject','total_time','exam_date','teacher','term','semester']
 
 
 class BlueprintSerializer(serializers.ModelSerializer):

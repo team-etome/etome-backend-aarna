@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'app1',
     'flutter',
     'teacher',
+    'aarna',
     'storages',
+
 ]
 
 MIDDLEWARE = [

@@ -20,10 +20,10 @@ class AnswerImage(models.Model):
 
 
 class Answer(models.Model):
-    student       = models.ForeignKey(Student,on_delete=models.CASCADE,null = True , blank = True)
-    question_code  = models.CharField(max_length=50)
-    date          = models.CharField(max_length=50)
-    answer_data    = models.JSONField()
+    student         =  models.ForeignKey(Student,on_delete=models.CASCADE,null = True , blank = True)
+    question_code   =  models.CharField(max_length=50)
+    date            =  models.CharField(max_length=50)
+    answer_data     =  models.JSONField()
 
 
 class AssignEvaluation(models.Model):
@@ -36,12 +36,12 @@ class AssignEvaluation(models.Model):
     
 
 class Evaluation(models.Model):
-    student       = models.ForeignKey(Student,on_delete=models.CASCADE , null = True , blank = True )
-    question_code  = models.CharField(max_length=50)
-    teacher       = models.ForeignKey(Teacher , on_delete=models.CASCADE,null = True , blank = True )
-    mark_data      = models.JSONField()
-    total_mark     = models.CharField(max_length=50)
-    date          = models.CharField(max_length=50)
+    student        =  models.ForeignKey(Student,on_delete=models.CASCADE , null = True , blank = True )
+    question_code  =  models.CharField(max_length=50)
+    teacher        =  models.ForeignKey(Teacher , on_delete=models.CASCADE,null = True , blank = True )
+    mark_data      =  models.JSONField()
+    total_mark     =  models.CharField(max_length=50)
+    date           =  models.CharField(max_length=50)
 
 
 class SeatingArrangement(models.Model):
@@ -51,10 +51,10 @@ class SeatingArrangement(models.Model):
         ('horizondal_arranegement', 'horizondal_arranegement')
     ]
 
-    pattern = models.CharField(max_length=50, choices=PATTERN_CHOICES)
-    hall_name = models.CharField(max_length=100)
-    teacher_name = models.CharField(max_length=100)
-    exam_name = models.CharField(max_length=100)
-    exam_date = models.DateField()
-    exam_time = models.TimeField()
-    department_students = models.JSONField(null=True, blank=True)
+    pattern              =  models.CharField(max_length=50, choices=PATTERN_CHOICES)
+    hall_name            =  models.CharField(max_length=100)
+    teacher_name         =  models.CharField(max_length=100)
+    exam_name            =  models.CharField(max_length=100)
+    exam_date            =  models.DateField()
+    exam_time            =  models.TimeField()
+    department_students  =  models.JSONField(null=True, blank=True)

@@ -36,7 +36,8 @@ class Admin(models.Model):
 class Department(models.Model):
     department         =    models.CharField(max_length=50 , null=True)
     department_code    =    models.CharField(null=True)
-    department_head    =    models.CharField(max_length=50, null=True)
+    # department_head    =    models.CharField(max_length=50, null=True)
+    program            =  models.CharField(max_length =20, null = True)
 
 
 
@@ -101,15 +102,15 @@ class QuestionPaper(models.Model):
         ('declined' , 'declined'),
     )
     exam_name        =  models.CharField(max_length = 150)
-    department      =  models.ForeignKey(Department ,on_delete=models.CASCADE , null = True , blank = True)
-    subject         =  models.ForeignKey(Subject ,on_delete=models.CASCADE , null = True , blank = True) 
-    semester        =  models.CharField(max_length = 15,null = True , blank = True)
-    total_time      =  models.CharField(max_length = 15)
-    exam_date       =  models.DateField()
-    vet_teacher1     =  models.ForeignKey(Teacher ,on_delete=models.CASCADE, blank = True , null = True)
-    send_Blueprint  =  models.BooleanField(default = False)
-    term            =  models.CharField(max_length = 15,null=True,blank = True)
-    status          =  models.CharField(choices = STATUS_CHOICES,default='send')
+    department       =  models.ForeignKey(Department ,on_delete=models.CASCADE , null = True , blank = True)
+    subject          =  models.ForeignKey(Subject ,on_delete=models.CASCADE , null = True , blank = True) 
+    semester         =  models.CharField(max_length = 15,null = True , blank = True)
+    total_time       =  models.CharField(max_length = 15)
+    exam_date        =  models.DateField()
+    teacher          =  models.ForeignKey(Teacher ,on_delete=models.CASCADE, blank = True , null = True)
+    send_Blueprint   =  models.BooleanField(default = False)
+    term             =  models.CharField(max_length = 15,null=True,blank = True)
+    status           =  models.CharField(choices = STATUS_CHOICES,default='send')
 
 
 

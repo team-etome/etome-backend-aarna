@@ -109,10 +109,10 @@ class AddDepartment(APIView):
         for department in departments:
             departmentDetails.append({
 
-                'id'           :  department.id,
-                'departmentName': department.department,
-                'departmentCode': department.department_code,
-                'department_head': department.department_head,
+                'id'              :  department.id,
+                'departmentName'  :  department.department,
+                'departmentCode'  :  department.department_code,
+                'program'         :  department.program,
             })
 
         return JsonResponse(departmentDetails, safe=False)
@@ -130,8 +130,8 @@ class AddDepartment(APIView):
             department.department = data['department']
         if 'department_code' in data:
             department.department_code = data['department_code']
-        if 'department_head' in data:
-            department.department_head = data['department_head']
+        if 'program' in data:
+            department.program = data['program']
 
         department.save()
 
