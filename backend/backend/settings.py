@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'app1',
     'flutter',
     'teacher',
+    'aarna',
+    'storages',
+
 ]
 
 MIDDLEWARE = [
@@ -190,7 +193,7 @@ USE_TZ = True
 import os
 STATIC_URL = 'static/'
 MEDIA_Root ='/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+# MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 
 STATICFILES_DIRS   = ( os.path.join(BASE_DIR,'static'), )
 
@@ -199,3 +202,17 @@ STATICFILES_DIRS   = ( os.path.join(BASE_DIR,'static'), )
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'app1.God'
+
+
+
+
+AWS_ACCESS_KEY_ID = 'AKIARGMAECOD3SF5GX4Q'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'etomeimage'
+AWS_S3_SIGNATURE_NAME = 's3v4'
+AWS_S3_REGION_NAME = 'ap-southeast-2'
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL =  None
+AWS_S3_VERITY = True
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+

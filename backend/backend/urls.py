@@ -16,6 +16,8 @@ urlpatterns = [
 
     path('', include('teacher.urls')),
 
+    path('', include('aarna.urls')),
+
 
    
     

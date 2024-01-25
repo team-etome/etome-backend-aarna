@@ -65,6 +65,7 @@ class AssignBlueprint(APIView):
             return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
         else:
+            print(questionpaper_serializer.errors ,"aaaaaaaaaaaa")
             return Response(questionpaper_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
@@ -75,13 +76,17 @@ class AssignBlueprint(APIView):
 
         for blueprint in blueprints:
             department_name = blueprint.department.department
-            vetTeacher      = blueprint.vetTeacher1.name 
+            if blueprint.teacher is not None:
+                vetTeacher = blueprint.teacher.name
+            else:
+                vetTeacher = "No Teacher Assigned"
+
             blueprintDetails.append({
 
                 'id'             :  blueprint.id,
-                'ExamName'       :  blueprint.examName,
+                'ExamName'       :  blueprint.exam_name,
                 'department'     :  department_name,
-                'exam_date'       :  blueprint.exam_date,
+                'exam_date'      :  blueprint.exam_date,
                 'semester'       :  blueprint.semester,
                 'term'           :  blueprint.term,
                 'status'         :  blueprint.status,

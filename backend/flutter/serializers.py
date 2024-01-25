@@ -45,9 +45,9 @@ class StudentSerializer(serializers.ModelSerializer):
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
-        fields = ['studentId', 'questionCode', 'date', 'answerData']
+        fields = ['student', 'question_code', 'date', 'answer_data']
         
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
-        fields = ['studentId', 'questionCode', 'teacherId','markData','totalMark','date']
+        fields = ['student', 'question_code', 'teacher','mark_data','total_mark','date']

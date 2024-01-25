@@ -20,16 +20,17 @@ class AnswerImage(models.Model):
 
 
 class Answer(models.Model):
-    student       = models.ForeignKey(Student,on_delete=models.CASCADE,null = True , blank = True)
-    questionCode  = models.CharField(max_length=50)
-    date          = models.CharField(max_length=50)
-    answerData    = models.JSONField()
+    student         =  models.ForeignKey(Student,on_delete=models.CASCADE,null = True , blank = True)
+    question_code   =  models.CharField(max_length=50)
+    date            =  models.CharField(max_length=50)
+    answer_data     =  models.JSONField()
 
 
 class AssignEvaluation(models.Model):
     department     =  models.ForeignKey(Department , on_delete=models.CASCADE )
     semester       =  models.CharField(max_length = 20)
     subject        =  models.ForeignKey(Subject , on_delete=models.CASCADE)
+    teacher        =  models.ForeignKey(Teacher , on_delete=models.CASCADE)
     endDate        =  models.DateField()
 
     
@@ -50,11 +51,10 @@ class SeatingArrangement(models.Model):
         ('horizondal_arranegement', 'horizondal_arranegement')
     ]
 
-    pattern = models.CharField(max_length=50, choices=PATTERN_CHOICES)
-    hall_name = models.CharField(max_length=100)
-    teacher_name = models.CharField(max_length=100)
-    exam_name = models.CharField(max_length=100)
-    exam_date = models.DateField()
-    exam_time = models.TimeField()
-
-    department_students = models.JSONField(null=True, blank=True)
+    pattern              =  models.CharField(max_length=50, choices=PATTERN_CHOICES)
+    hall_name            =  models.CharField(max_length=100)
+    teacher_name         =  models.CharField(max_length=100)
+    exam_name            =  models.CharField(max_length=100)
+    exam_date            =  models.DateField()
+    exam_time            =  models.TimeField()
+    department_students  =  models.JSONField(null=True, blank=True)
