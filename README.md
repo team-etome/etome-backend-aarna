@@ -31,6 +31,7 @@
      pip install pillow
      pip install django-cors-headers
      pip install psycopg2
+     pip install django-storages
      ```
 
 6. **Database Migration:**
