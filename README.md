@@ -32,6 +32,7 @@
      pip install django-cors-headers
      pip install psycopg2
      pip install django-storages
+     pip install boto3
      ```
 
 6. **Database Migration:**

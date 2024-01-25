@@ -27,10 +27,10 @@ class Answer(models.Model):
 
 
 class AssignEvaluation(models.Model):
-    department     =  models.ForeignKey(Department , on_delete=models.CASCADE )
+    department     =  models.ForeignKey(Department , on_delete=models.CASCADE)
     semester       =  models.CharField(max_length = 20)
     subject        =  models.ForeignKey(Subject , on_delete=models.CASCADE)
-    teacher        =  models.ForeignKey(Teacher , on_delete=models.CASCADE)
+    teacher        =  models.ForeignKey(Teacher , on_delete=models.CASCADE, null = True, blank= True)
     endDate        =  models.DateField()
 
     
