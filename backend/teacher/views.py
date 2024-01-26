@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
+from aarna.models import *
 from app1.serializers import * 
 from rest_framework.exceptions import ValidationError
 from app1.token import get_token
@@ -126,7 +127,7 @@ class TeacherLoginView(APIView):
             teacher_token = get_token(teacher, user_type='teacher')
             
             try:
-                qpaper_assigned = QuestionPaper.objects.get(vetTeacher1_id=teacher_id)
+                qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
                 qpaper_details = qpaper_assigned
 
               
@@ -135,14 +136,14 @@ class TeacherLoginView(APIView):
                     'token': teacher_token,
                     'qpaper_details': {
                         'id'      : qpaper_details.id,
-                        'examName': qpaper_details.examName,
+                        'examName': qpaper_details.exam_name,
                         'department': qpaper_details.department.department,
                         'subject': qpaper_details.subject.subject,
                         'semester': qpaper_details.semester,
                         'total_time': qpaper_details.total_time,
                         'exam_date': qpaper_details.exam_date,
-                        'vetTeacher1': qpaper_details.vetTeacher1.name,
-                        'teacherid'  : qpaper_details.vetTeacher1.id,
+                        'vetTeacher1': qpaper_details.teacher.name,
+                        'teacherid'  : qpaper_details.teacher.id,
                         'term': qpaper_details.term,
                         'status': qpaper_details.status,
                     }
@@ -185,19 +186,23 @@ class QpaperModule(APIView):
         except Blueprint.DoesNotExist:
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    
     def put(self, request, qpaperid):
         try:
             question_paper = QuestionPaper.objects.get(pk=qpaperid)
         except QuestionPaper.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
         data = request.data
         status_action = data.get('status_action', None)
-
         if status_action == "approve":
             question_paper.status = "approved"
             question_paper.save()
+            TimeTable.objects.get_or_create(
+                exam_name=question_paper.exam_name,
+                department=question_paper.department,
+                subject_id=question_paper.subject_id,
+                exam_date=question_paper.exam_date,
+                exam_time=question_paper.total_time
+            )
             return Response(status=status.HTTP_200_OK)
         elif status_action == "decline":
             question_paper.status = "declined"
@@ -205,6 +210,7 @@ class QpaperModule(APIView):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
+    
         
 
 
