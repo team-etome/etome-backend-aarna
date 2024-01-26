@@ -17,6 +17,8 @@ from rest_framework import status
 class AddStudent(APIView):
     def post(self , request ):
         data = request.data
+
+        print(data,"dataaaaaaaaaaaaaaaaaaa")
         student_serializer = StudentSerializer(data = data)
 
         if student_serializer.is_valid():

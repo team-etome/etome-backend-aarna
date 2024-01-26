@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
 from app1.serializers import * 
+from aarna.models import * 
 from rest_framework.exceptions import ValidationError
 from app1.token import get_token
 from django.contrib.auth.hashers import check_password
@@ -11,6 +12,8 @@ from django.contrib.auth import login
 from .serializers import *
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+from datetime import datetime
+import copy
 # from rest_framework.permissions import IsAuthenticated
 
 
@@ -126,7 +129,7 @@ class TeacherLoginView(APIView):
             teacher_token = get_token(teacher, user_type='teacher')
             
             try:
-                qpaper_assigned = QuestionPaper.objects.get(vetTeacher1_id=teacher_id)
+                qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
                 qpaper_details = qpaper_assigned
 
               
@@ -135,14 +138,14 @@ class TeacherLoginView(APIView):
                     'token': teacher_token,
                     'qpaper_details': {
                         'id'      : qpaper_details.id,
-                        'examName': qpaper_details.examName,
+                        'examName': qpaper_details.exam_name,
                         'department': qpaper_details.department.department,
                         'subject': qpaper_details.subject.subject,
                         'semester': qpaper_details.semester,
                         'total_time': qpaper_details.total_time,
                         'exam_date': qpaper_details.exam_date,
-                        'vetTeacher1': qpaper_details.vetTeacher1.name,
-                        'teacherid'  : qpaper_details.vetTeacher1.id,
+                        'vetTeacher1': qpaper_details.teacher.name,
+                        'teacherid'  : qpaper_details.teacher.id,
                         'term': qpaper_details.term,
                         'status': qpaper_details.status,
                     }
@@ -198,6 +201,14 @@ class QpaperModule(APIView):
         if status_action == "approve":
             question_paper.status = "approved"
             question_paper.save()
+
+            TimeTable.objects.get_or_create(
+                exam_name=question_paper.exam_name,
+                department=question_paper.department,
+                subject_id=question_paper.subject_id,
+                exam_date=question_paper.exam_date,
+                exam_time=question_paper.total_time
+            )
             return Response(status=status.HTTP_200_OK)
         elif status_action == "decline":
             question_paper.status = "declined"
@@ -211,10 +222,8 @@ class QpaperModule(APIView):
 class SeatingArrangementView(APIView):
     
     def patterned_distribution(self, dept_students, rows, cols, students_per_bench):
-        # Check there are enough students in each department list
+      
         assert all(len(students) >= students_per_bench for students in dept_students.values())
-
-        # Create the seating arrangement following the provided pattern
         seating_arrangement = []
         dept_keys = list(dept_students.keys())
         total_depts = len(dept_keys)
@@ -222,65 +231,99 @@ class SeatingArrangementView(APIView):
         for bench_num in range(rows * cols):
             bench_students = []
             for student_num in range(students_per_bench):
-                # Calculate department index (cycle through departments)
                 dept_index = (bench_num + student_num) % total_depts
-                # Get the department key based on current index
                 dept_key = dept_keys[dept_index]
-                # Append the student to the bench list and remove from department list
                 if dept_students[dept_key]:
                     bench_students.append(dept_students[dept_key].pop(0))
-            # Add the bench list to the seating arrangement
             seating_arrangement.append(bench_students)
 
         return seating_arrangement
 
     def sequential_distribution(self, dept_students, rows, cols, students_per_bench):
-        # Ensure there are enough students in each list for the seating arrangement
-        assert all(len(students) >= rows for students in dept_students.values())
-
-        # Create the seating arrangement following the sequential pattern
         seating_arrangement = []
+        max_students_per_dept = max(len(students) for students in dept_students.values())
+
         for bench_num in range(rows * cols):
             bench_students = []
             for dept_key in dept_students.keys():
-                # Get the student number based on the row
                 student_num = bench_num // cols
-                # Assign the student to the bench
                 if student_num < len(dept_students[dept_key]):
                     bench_students.append(dept_students[dept_key][student_num])
                 else:
-                    bench_students.append(None)  # Append None if there are no more students
-            # Add the bench list to the seating arrangement
+                    # Add None for empty seats
+                    bench_students.append(None) 
+
             seating_arrangement.append(bench_students)
 
         return seating_arrangement
 
+
     def post(self, request, *args, **kwargs):
-        # Extract data from request.data
-        pattern_type = request.data.get('pattern_type')
-        dept_students = {
-            'A': request.data.get('A_students'),
-            'B': request.data.get('B_students'),
-            'C': request.data.get('C_students'),
-        }
-        rows = request.data.get('rows')
-        cols = request.data.get('cols')
-        students_per_bench = request.data.get('students_per_bench')
+        data = request.data
+        print(data,"bbbbbbbbbbbbbbbbbbbbbbbbbbb")
+        pattern_type = data.get('seating_layout')
+        pattern      = data.get('pattern')
+        print(pattern_type,"aaaaaaaaaaaaaaaaaaaaaaaaaa")
+        department_ids = [int(id) for id in data.get('departments', []) if id.isdigit()]
+        students = Student.objects.filter(department__id__in=department_ids, selected=False)
 
-        # Validate input data here
+        department_students = {}
+        for student in students:
+            dept_id = student.department.id
+            if dept_id not in department_students:
+                department_students[dept_id] = []
+            department_students[dept_id].append(student.roll_no)
 
-        # Check for valid pattern type and call the appropriate distribution function
+        print(department_students  , "department students 1")
+        
+      
+        hall_name = data.get('hallName')
+        teacher_id = data.get('teacher')
+        exam_name = data.get('exam_name')
+        exam_date = data.get('exam_date')
+        exam_time = data.get('exam_time')
+        seating_layout = data.get('seating_layout')
+        teacher_id = data.get('teacher')[0] if data.get('teacher') else None
+
+        rows = int(data.get('rows'))
+        cols = int(data.get('cols'))
+        students_per_bench = int(data.get('studentsPerBench'))
+
+      
+        exam_date_obj = datetime.strptime(exam_date, '%Y-%m-%d').date()
+   
         if pattern_type == 'patterned':
-            seating_arrangement = self.patterned_distribution(dept_students, rows, cols, students_per_bench)
+            # Clone the dictionary before passing to the function
+            cloned_dept_students = copy.deepcopy(department_students)
+            seating_arrangement = self.patterned_distribution(cloned_dept_students, rows, cols, students_per_bench)
         elif pattern_type == 'sequential':
-            seating_arrangement = self.sequential_distribution(dept_students, rows, cols, students_per_bench)
+            # Similarly, clone for the sequential distribution
+            cloned_dept_students = copy.deepcopy(department_students)
+            seating_arrangement = self.sequential_distribution(cloned_dept_students, rows, cols, students_per_bench)
         else:
-            # Handle invalid pattern type
             return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({
-            'seating_arrangement': seating_arrangement
-        }, status=status.HTTP_200_OK)
+
+
+        print(department_students  , "department students 2")
+      
+        SeatingArrangement.objects.create(
+            pattern=pattern,
+            hall_name=hall_name,
+            teacher_id=teacher_id,
+            exam_name=exam_name,
+            exam_date=exam_date_obj,
+            exam_time=exam_time,
+            seating_layout=seating_layout,
+            department_students=department_students
+        )
+
+        selected_student_ids = [student.id for student in students]
+        Student.objects.filter(id__in=selected_student_ids).update(selected=True)
+
+        
+
+        return Response({'seating_arrangement': seating_arrangement}, status=status.HTTP_200_OK)
 
 
 

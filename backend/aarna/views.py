@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
 from flutter.models import *
+from .models import *
 from app1.serializers import * 
 from flutter.serializers import * 
 from rest_framework.exceptions import ValidationError
@@ -16,12 +17,10 @@ from django.conf import settings
 
 
 
-class TimeTable(APIView):
+class Timetable(APIView):
 
     def get(self , request):
         questionpapers = QuestionPaper.objects.all().order_by('exam_date')
-
-
         for questionpaper in questionpapers:
             TimeTable.objects.create(
                 exam_name=questionpaper.exam_name,
