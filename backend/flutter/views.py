@@ -35,11 +35,11 @@ class StudentExaminationLogin(APIView):
 
     def post(self , request , *args , **kwargs):
         roll_no  = request.data.get('roll_no')
-        password = request.data.get('dob')
+        password = request.data.get('parent_contact_number')
 
         try:
-            user = Student.objects.get(roll_no = roll_no , dob = password)
-
+            user = Student.objects.get(roll_no = roll_no , parent_contact_number = password)
+            
         except Student.DoesNotExist:
             user = None
         # if user is not None and check_password(password,user.password):
@@ -70,25 +70,40 @@ class Answers(APIView):
     def get(self, request, *args, **kwargs):
         student_id = request.GET.get('studentId')
         question_code = request.GET.get('questionCode')
-       
-        if not student_id or not question_code:
-       
+        print(student_id, 'student_id is hereeeee')
+        print(question_code, 'question_code is hereeeee')
+        
+        if not student_id and not question_code:
             answers = Answer.objects.all()
-            answerdetails = []
-            for answer in answers:
-                answerdetails.append({
-                    'studentId':answer.studentId,
-                    'questionCode':answer.questionCode,
-                    'date':answer.date,
-                    'answerData':answer.answerData,
-                })
-            return JsonResponse({'data': answerdetails}, status=400)
-        try:
-            answer = Answer.objects.get(studentId=student_id, questionCode=question_code)
-           
-            return JsonResponse({'data': answer.answerData})
-        except Answer.DoesNotExist:
-            return JsonResponse({'error': 'No matching record found'}, status=404)
+            answerdetails = [{
+                'studentId': answer.studentId,
+                'questionCode': answer.questionCode,
+                'date': answer.date,
+                'answerData': answer.answerData,
+            } for answer in answers]
+            
+            return JsonResponse({'data': answerdetails})
+        
+        if not student_id:
+            return JsonResponse({'error': 'Student ID is required'}, status=400)
+            
+        if not question_code:
+            answers = Answer.objects.filter(studentId=student_id)
+            answerdetails = [{
+                'studentId': answer.studentId,
+                'questionCode': answer.questionCode,
+                'date': answer.date,
+                'answerData': answer.answerData,
+            } for answer in answers]
+            
+            return JsonResponse({'data': answerdetails})
+        else:
+            try:
+                answer = Answer.objects.get(studentId=student_id, questionCode=question_code)
+                print(answer, 'answer is hereeeee')
+                return JsonResponse({'data': answer.answerData})
+            except Answer.DoesNotExist:
+                return JsonResponse({'error': 'No matching record found'}, status=404)
         
         
 class Evaluations(APIView):
