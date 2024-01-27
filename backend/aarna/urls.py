@@ -7,13 +7,8 @@ from aarna import views
 urlpatterns = [ 
 
     path('api/timetable', views.Timetable.as_view(), name='timetable'),
-
     path('api/hallticket', views.HallTicket.as_view(), name='hallticket'),
-
-
-
-    
-
+    path('api/evaluationAssign',views.EvaluationAssign.as_view(),name='evaluationAssign')
 
 
 
