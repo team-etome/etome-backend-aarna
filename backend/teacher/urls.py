@@ -14,7 +14,7 @@ urlpatterns = [
      path('api/getBlueprintDetails/<int:id>', views.BlueprintDetailView.as_view(), name='get_blueprint_details'),
      path('api/qpapermodule', views.QpaperModule.as_view(), name='qpapermodule'),
      path('api/qpapermodule/<int:qpaperid>', views.QpaperModule.as_view(), name='qpapermodule'),
-     path('seatingArrangement', views.SeatingArrangementView.as_view(), name='seatingA rrangement'),
+     path('api/seatingArrangement', views.SeatingArrangementView.as_view(), name='seatingA rrangement'),
       
 
 

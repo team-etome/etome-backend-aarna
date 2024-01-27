@@ -86,12 +86,7 @@ class Student(models.Model):
     gender                =  models.CharField(max_length=15 ,blank= True , null = True)
     dob                   =  models.DateField(null = True , blank = True )
     password              =  models.CharField(max_length=10 , blank=True , null=True),
-    parent_name           =  models.CharField(max_length=255 , null = True , blank = True) 
-    parent_email          =  models.EmailField(null = True , blank = True)
-    parent_contact_number =  models.CharField(max_length=15 , null = True , blank = True)
-    parent_relation       =  models.CharField(max_length=50 , null = True , blank = True)
     image                 =  models.ImageField(blank=True,null=True , upload_to='student')
-    address               =  models.CharField(max_length=200, null = True , blank = True)   
     selected              =  models.BooleanField(default = False) 
 
 class QuestionPaper(models.Model):
