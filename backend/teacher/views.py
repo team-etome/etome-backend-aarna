@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
+from aarna.models import *
 from app1.serializers import * 
 from aarna.models import * 
 from rest_framework.exceptions import ValidationError
@@ -188,16 +189,13 @@ class QpaperModule(APIView):
         except Blueprint.DoesNotExist:
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    
     def put(self, request, qpaperid):
         try:
             question_paper = QuestionPaper.objects.get(pk=qpaperid)
         except QuestionPaper.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
         data = request.data
         status_action = data.get('status_action', None)
-
         if status_action == "approve":
             question_paper.status = "approved"
             question_paper.save()
@@ -216,6 +214,7 @@ class QpaperModule(APIView):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
+    
         
 
 
