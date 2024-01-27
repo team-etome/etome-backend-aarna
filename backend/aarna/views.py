@@ -21,8 +21,6 @@ class Timetable(APIView):
 
     def get(self , request):
         questionpapers = QuestionPaper.objects.all().order_by('exam_date')
-
-
         for questionpaper in questionpapers:
             TimeTable.objects.create(
                 exam_name=questionpaper.exam_name,

@@ -53,8 +53,9 @@ class SeatingArrangement(models.Model):
 
     pattern              =  models.CharField(max_length=50, choices=PATTERN_CHOICES)
     hall_name            =  models.CharField(max_length=100)
-    teacher_name         =  models.CharField(max_length=100)
+    teacher              =  models.ForeignKey(Teacher , on_delete = models.CASCADE ,null = True , blank = True)
     exam_name            =  models.CharField(max_length=100)
     exam_date            =  models.DateField()
-    exam_time            =  models.TimeField()
+    exam_time            =  models.CharField()
+    seating_layout       =  models.CharField(max_length = 50, null = True , blank = True)
     department_students  =  models.JSONField(null=True, blank=True)

@@ -26,21 +26,16 @@ class StudentSerializer(serializers.ModelSerializer):
             'gender',
             'dob',
             'password',
-            'parent_name',
-            'parent_email',
-            'parent_contact_number',
-            'parent_relation',
             'image',
-            'address'
         ]
 
-    # def create(self, validated_data):
-    #     password = validated_data.pop('password', None)
-    #     instance = self.Meta.model(**validated_data)
-    #     if password is not None:
-    #         instance.password = make_password(password)
-    #     instance.save()
-    #     return instance
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        instance = self.Meta.model(**validated_data)
+        if password is not None:
+            instance.password = make_password(password)
+        instance.save()
+        return instance
         
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
