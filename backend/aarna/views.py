@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+import json
 
 
 
@@ -30,57 +31,70 @@ class Timetable(APIView):
                 exam_time=questionpaper.total_time,
             )
 
+class EvaluationAssign(APIView):
 
-class EvaluationView(APIView):
-    def get(self, request, *args, **kwargs):
+ 
+    def distribute_papers_to_teachers(teachers, answer_papers):
+        num_teachers = len(teachers)
+        assigned_papers = {teacher.id: [] for teacher in teachers}
 
+        all_papers = [(student_roll, papers) for student_roll, papers in answer_papers.items()]
+        idx = 0  # Index to iterate over papers
 
-        # Get the number of teachers and total number of students from the request
-        num_teachers = int(request.GET.get('teachers', 0))
-        num_students = int(request.GET.get('students', 0))
+        while all_papers:
+            teacher = teachers[idx % num_teachers]
+            student_roll, papers = all_papers.pop(0)  # Get the first set of papers
+            assigned_papers[teacher.id].append({student_roll: papers})
+            idx += 1
 
-        # Validate inputs
-        if num_teachers <= 0 or num_students <= 0:
-            return Response("Invalid input. Please provide a positive number of teachers and students.")
+        return assigned_papers
 
-        # Generate example data for teachers and students
-        teachers = [f"teach{i}" for i in range(1, num_teachers + 1)]
-        students = [f"st{i}" for i in range(1, num_students + 1)]
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        department_name = data.get('department')
+        semester = data.get('semester')
+        subject_id = data.get('subject')
 
-        # Splitting logic based on the parity of teachers and students
-        if num_teachers % 2 == 0 and num_students % 2 == 0:
-            # Even teachers and even students: Assign students in a round-robin fashion
-            assigned_students = {teacher: [] for teacher in teachers}
-            for idx, student in enumerate(students):
-                teacher = teachers[idx % num_teachers]
-                assigned_students[teacher].append(student)
+        try:
+            department = Department.objects.get(department=department_name)
+            subject = Subject.objects.get(id=subject_id)
+            students = Student.objects.filter(department=department)
 
-        elif num_teachers % 2 != 0 and num_students % 2 == 0:
-            # Odd teachers and even students: Assign students sequentially to teachers
-            assigned_students = {teachers[i]: students[i::num_teachers] for i in range(num_teachers)}
+            answer_papers = {}
+            for student in students:
+                questions = Questions.objects.filter(questionpaper__subject=subject)
+                answers = Answer.objects.filter(student=student, question__in=questions)
+                answer_data = [answer.answer_data for answer in answers]
+                answer_papers[student.roll_number] = answer_data
 
-        elif num_teachers % 2 == 0 and num_students % 2 != 0:
-            # Even teachers and odd students: Assign students in a round-robin fashion
-            assigned_students = {teacher: [] for teacher in teachers}
-            for idx, student in enumerate(students):
-                teacher = teachers[idx % num_teachers]
-                assigned_students[teacher].append(student)
+            teachers = Teacher.objects.filter(id__in=data.get('teacher', []))
 
-        else:
-            # Odd teachers and odd students: Assign students sequentially to teachers
-            assigned_students = {teachers[i]: students[i::num_teachers] for i in range(num_teachers)}
+           
+            distributed_papers = self.distribute_papers_to_teachers(teachers, answer_papers)
 
-        # Print the output to the terminal
-        for teacher, students_list in assigned_students.items():
-            print(f"{teacher} is assigned the following students: {students_list}")
+           
+            for teacher_id, papers in distributed_papers.items():
+                AssignEvaluation.objects.update_or_create(
+                    department=department,
+                    semester=semester,
+                    subject=subject,
+                    teacher_id=teacher_id,
+                    defaults={'students': json.dumps(papers)}
+                )
 
-        return Response("Output printed to the terminal.")  
+            return Response("Evaluation assignments updated successfully.")
+
+        except Department.DoesNotExist:
+            return Response("Department not found", status=404)
+        except Subject.DoesNotExist:
+            return Response("Subject not found", status=404)
+    
+
 
 class HallTicket(APIView):
     def get(self,request,id ,*args,**kwargs):
         
-        st_id = id 
-        student = Student.objects.get(id = st_id)
+        student = Student.objects.get(id = id)
         department_id = student.department
         timetable = TimeTable.objects.filter(department_id = department_id).order_by('exam_date')
 

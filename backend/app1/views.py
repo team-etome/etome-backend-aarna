@@ -168,7 +168,7 @@ class AddSubject(APIView):
     def get(self,request):
       
         subjects = Subject.objects.all().order_by('id')
-        
+       
         subjectDetails = []
 
         for subject in subjects:
@@ -180,7 +180,9 @@ class AddSubject(APIView):
                 'subjectCode'   : subject.subject_code,
                 'programme'   : subject.programme,
                 'semester'    : subject.semester , 
-
+                'department_id' : subject.department_id,
+                'department_name'  : subject.department.department,
+                
             })
 
 
