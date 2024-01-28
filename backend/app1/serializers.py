@@ -15,7 +15,7 @@ class AdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Admin
-        fields = ['instituteName','emailid','password','address','university','phn_number']
+        fields = ['instituteName','emailid','password','branch','university','phn_number']
 
 
     def create(self, validated_data):

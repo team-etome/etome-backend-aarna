@@ -24,9 +24,9 @@ class Admin(models.Model):
     instituteName            =   models.CharField(max_length=200)
     emailid                  =   models.EmailField()
     password                 =   models.CharField()
-    address                  =   models.CharField(max_length=200)
     university               =   models.CharField(max_length=200)
     phn_number               =   models.CharField()
+    branch                   =   models.CharField(max_length = 20 , null = True , blank = True)
 
 
 
