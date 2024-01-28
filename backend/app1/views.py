@@ -70,15 +70,14 @@ class AdminLoginView(APIView):
 
 
 
-#adding colleges(admin) by God
+
 class AddAdmin(APIView):
     def post(self , request):
         data = request.data
+
         admin_serializer = AdminSerializer(data=data)
-       
         if admin_serializer.is_valid():
             admin_serializer.save()
-
             return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
