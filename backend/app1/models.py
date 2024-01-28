@@ -84,7 +84,7 @@ class Student(models.Model):
     email                 =  models.EmailField(unique=True)
     gender                =  models.CharField(max_length=15 ,blank= True , null = True)
     dob                   =  models.DateField(null = True , blank = True )
-    password              =  models.CharField(max_length=10 , blank=True , null=True),
+    password              =  models.CharField(max_length = 100 , null = True , blank = True)
     image                 =  models.ImageField(blank=True,null=True , upload_to='student')
     selected              =  models.BooleanField(default = False) 
 
