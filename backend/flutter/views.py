@@ -35,22 +35,21 @@ class StudentExaminationLogin(APIView):
 
     def post(self , request , *args , **kwargs):
         roll_no  = request.data.get('roll_no')
-        password = request.data.get('parent_contact_number')
+        password = request.data.get('password')
 
         try:
-            user = Student.objects.get(roll_no = roll_no , parent_contact_number = password)
+            user = Student.objects.get(roll_no = roll_no )
             
         except Student.DoesNotExist:
             user = None
-        # if user is not None and check_password(password,user.password):
-        #     return JsonResponse({'message': 'Login successful'})
-        
-        if user is not None :
-           
+            
+        if user is not None and check_password(password,user.password):
             return JsonResponse({'message': 'Login successful'})
-        
+
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
+        
+
         
 class Answers(APIView):
     def post(self ,request):
