@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
+from aarna.models import *
 from app1.serializers import *
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
@@ -10,6 +11,7 @@ from .serializers import *
 from django.db import transaction
 from django.db.models import Q
 from rest_framework import status
+from datetime import datetime
 
 
 
@@ -33,21 +35,43 @@ class AddStudent(APIView):
 #Student Login
 class StudentExaminationLogin(APIView):
 
-    def post(self , request , *args , **kwargs):
-        roll_no  = request.data.get('roll_no')
+    def post(self, request, *args, **kwargs):
+        roll_no = request.data.get('roll_no')
         password = request.data.get('password')
 
         try:
-            user = Student.objects.get(roll_no = roll_no )
+            user = Student.objects.get(roll_no=roll_no)
+
+            if user is not None and check_password(password, user.password):
+                current_date = datetime.now().date()
+                department_id = user.department_id
+
+                try:
+                    questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_date)
+                except QuestionPaper.DoesNotExist:
+                    return JsonResponse({'error': 'No exam scheduled for today'}, status=404)
+
+                try:
+                    main_question = Questions.objects.filter(questionpaper=questionpaper).first()
+                except Questions.DoesNotExist:
+                    return JsonResponse({'error': 'Questions not found for the exam'}, status=404)
+
+                if main_question:
+                    try:
+                        question_image = QuestionImage.objects.get(question=main_question)
+                        question_image_data = question_image.image.url
+                    except QuestionImage.DoesNotExist:
+                        return JsonResponse({'error': 'Question image not found'}, status=404)
+
+                    response_data = {'q_image': question_image_data}
+                    return JsonResponse({'message': 'Login successful', 'data': response_data})
+                else:
+                    return JsonResponse({'error': 'No questions found for the exam'}, status=404)
+            else:
+                return JsonResponse({'error': 'Invalid credentials'}, status=401)
             
         except Student.DoesNotExist:
-            user = None
-            
-        if user is not None and check_password(password,user.password):
-            return JsonResponse({'message': 'Login successful'})
-
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+            return JsonResponse({'error': 'Student not found'}, status=404)
         
 
         

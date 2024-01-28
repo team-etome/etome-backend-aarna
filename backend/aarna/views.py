@@ -14,7 +14,10 @@ from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 import json
-
+import random
+import string
+import base64
+from django.core.files.base import ContentFile
 
 
 
@@ -99,6 +102,49 @@ class HallTicket(APIView):
         timetable = TimeTable.objects.filter(department_id = department_id).order_by('exam_date')
 
         studentdetails = []
+
+
+
+class QuestionsView(APIView):
+
+    def post(self, request, *args, **kwargs):
+
+        question_id = request.POST.get('question_id')
+        question_image_data = request.POST.get('questionImage')
+        answer_image_data = request.POST.get('answerImage')
+
+        try:
+            question_paper = QuestionPaper.objects.get(pk=question_id)
+
+            # Generate a random question code
+            question_code = ''.join(random.choices(string.ascii_uppercase, k=3)) + ''.join(random.choices(string.digits, k=5))
+
+            print(question_code,"question codedeeeeeeeeeee")
+
+            # Create a new Questions object
+            question = Questions.objects.create(
+                questionpaper_id=question_id,  
+                questioncode=question_code
+            )
+
+            format, imgstr = question_image_data.split(';base64,')
+            ext = format.split('/')[-1]
+            question_img = ContentFile(base64.b64decode(imgstr), name='question.' + ext)
+            QuestionImage.objects.create(question=question, image=question_img)
+
+            # Handling answer image
+            format, imgstr = answer_image_data.split(';base64,')
+            answer_img = ContentFile(base64.b64decode(imgstr), name='answer.' + ext)
+            AnswerImage.objects.create(question=question, image=answer_img)
+
+            return JsonResponse({"success": True, "message": "Question and answer images successfully saved."}, status=200)
+
+        except QuestionPaper.DoesNotExist:
+            return JsonResponse({"success": False, "message": "QuestionPaper not found."}, status=404)
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+
 
         
 
