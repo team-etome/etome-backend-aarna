@@ -106,41 +106,41 @@ class Answers(APIView):
                 return JsonResponse({'error': 'No matching record found'}, status=404)
         
         
-class Evaluations(APIView):
+# class Evaluations(APIView):
 
-    def post(self ,request):
+#     def post(self ,request):
        
-        data = request.data
+#         data = request.data
        
-        evaluation_serializer = EvaluationSerializer(data = data)
+#         evaluation_serializer = EvaluationSerializer(data = data)
       
 
-        if evaluation_serializer.is_valid():
-            evaluation_serializer.save()
+#         if evaluation_serializer.is_valid():
+#             evaluation_serializer.save()
         
-            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+#         else:
+#             return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     
-    def get(self , request):
+#     def get(self , request):
 
-        answers = Evaluation.objects.all()
+#         answers = Evaluation.objects.all()
 
-        answerdetails = []
+#         answerdetails = []
 
-        for answer in answers:
-            answerdetails.append({
-                'studentId':answer.studentId,
-                'questionCode':answer.questionCode,
-                'teacherId':answer.teacherId,
-                'markData':answer.markData,
-                'totalMark':answer.totalMark,
-                'date':answer.date,
-            })
+#         for answer in answers:
+#             answerdetails.append({
+#                 'studentId':answer.studentId,
+#                 'questionCode':answer.questionCode,
+#                 'teacherId':answer.teacherId,
+#                 'markData':answer.markData,
+#                 'totalMark':answer.totalMark,
+#                 'date':answer.date,
+#             })
         
 
-        return JsonResponse(answerdetails, safe=False)
+#         return JsonResponse(answerdetails, safe=False)
 
 
 

@@ -36,7 +36,6 @@ class Admin(models.Model):
 class Department(models.Model):
     department         =    models.CharField(max_length=50 , null=True)
     department_code    =    models.CharField(null=True)
-    # department_head    =    models.CharField(max_length=50, null=True)
     program            =  models.CharField(max_length =20, null = True)
 
 

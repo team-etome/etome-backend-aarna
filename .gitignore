@@ -19,3 +19,4 @@ __pycache__/
 .env.local
 /env
 openvscode.bat
+current_ip_adress.json

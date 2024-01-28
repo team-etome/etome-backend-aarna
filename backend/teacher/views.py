@@ -323,8 +323,66 @@ class SeatingArrangementView(APIView):
         
 
         return Response({'seating_arrangement': seating_arrangement}, status=status.HTTP_200_OK)
+    
+
+    def get(self, request):
+
+        print("enteredddddddddddddd")
+
+        seating_arrangements = SeatingArrangement.objects.all().order_by('id')
+
+        print(seating_arrangements,'aaaaaaaaaaaaaaaaaaaa')
+
+        exam_names = [seating.exam_name for seating in seating_arrangements]
+
+        question_papers = QuestionPaper.objects.filter(exam_name__in=exam_names)
+
+        term_data = [paper.term for paper in question_papers]
+
+        seatingDetails = []
+
+        total_student_count = 0
+        total_department_count = 0
 
 
+        for seating in seating_arrangements:
+
+           
+            department_students = seating.department_students
+            student_count = sum(len(student_list) for student_list in department_students.values())
+            total_student_count += student_count
+            department_count = len(department_students)
+            total_department_count += department_count
+            department_id = list(department_students.keys())[0]
+
+            if department_students:
+                department_id = list(department_students.keys())[0]
+                department = Department.objects.get(id=department_id)  
+                department_code = department.department_code
+            else:
+                department_code = 'N/A'
+
+            detail = {
+
+                'hall_name': seating.hall_name,
+                'teacher': seating.teacher.name,
+                'term_data': term_data,
+                'student_count': student_count,
+                'department_count': department_count,
+                'department_code': department_code
+            }
+
+            seatingDetails.append(detail)
+
+            print(seatingDetails,'seating detailssss')
+
+
+        return JsonResponse(seatingDetails, safe=False)
+
+        
+
+        
+    
 
         
         
