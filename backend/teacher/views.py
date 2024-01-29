@@ -196,7 +196,7 @@ class QpaperModule(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         data = request.data
         status_action = data.get('status_action', None)
-        print(status_action,"status action")
+       
         if status_action == "approve":
             question_paper.status = "approved"
             question_paper.save()
