@@ -22,7 +22,7 @@ class God(AbstractUser):
 class Admin(models.Model):
 
     instituteName            =   models.CharField(max_length=200)
-    emailid                  =   models.EmailField()
+    emailid                  =   models.EmailField(unique=True )
     password                 =   models.CharField()
     university               =   models.CharField(max_length=200)
     phn_number               =   models.CharField()

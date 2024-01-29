@@ -181,6 +181,7 @@ class AddSubject(APIView):
                 'semester'    : subject.semester , 
                 'department_id' : subject.department_id,
                 'department_name'  : subject.department.department,
+                'elective'         : subject.elective
                 
             })
 
