@@ -33,8 +33,65 @@ class AddStudent(APIView):
 
 
 #Student Login
-class StudentExaminationLogin(APIView):
+# class StudentExaminationLogin(APIView):
 
+#     def post(self, request, *args, **kwargs):
+#         roll_no = request.data.get('roll_no')
+#         password = request.data.get('password')
+
+#         try:
+#             user = Student.objects.get(roll_no=roll_no)
+
+#             if user is not None and check_password(password, user.password):
+#                 current_date = datetime.now().date()
+#                 department_id = user.department_id
+
+#                 question_paper_details = []
+
+#                 try:
+#                     questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_date)
+#                     print(questionpaper.total_time, 'question paperrrrrrrrrrrrrrr is here')
+
+#                     question_paper_details.append({
+
+#                         'exam_name': questionpaper.exam_name,
+#                         'total_time': questionpaper.total_time,
+#                         'semester': questionpaper.semester,
+#                         'department': questionpaper.department.department,  
+#                         'subject': questionpaper.subject.subject,  
+#                         'teacher': questionpaper.teacher.name,  
+
+#                     })
+
+                   
+#                 except QuestionPaper.DoesNotExist:
+#                     return JsonResponse({'error': 'No exam scheduled for today'}, status=404)
+
+#                 try:
+#                     main_question = Questions.objects.filter(questionpaper=questionpaper).first()
+#                 except Questions.DoesNotExist:
+#                     return JsonResponse({'error': 'Questions not found for the exam'}, status=404)
+
+#                 if main_question:
+#                     try:
+#                         question_image = QuestionImage.objects.get(question=main_question)
+#                         question_image_data = question_image.image.url
+#                         print(question_image_data,"aaaaaaaaaaaaaaaaaaaaaaa")
+#                     except QuestionImage.DoesNotExist:
+#                         return JsonResponse({'error': 'Question image not found'}, status=404)
+
+#                     response_data = {'q_image': question_image_data ,question_paper_details}
+                  
+#                     return JsonResponse({'message': 'Login successful', 'data': response_data})
+#                 else:
+#                     return JsonResponse({'error': 'No questions found for the exam'}, status=404)
+#             else:
+#                 return JsonResponse({'error': 'Invalid credentials'}, status=401)
+            
+#         except Student.DoesNotExist:
+#             return JsonResponse({'error': 'Student not found'}, status=404)
+        
+class StudentExaminationLogin(APIView):
     def post(self, request, *args, **kwargs):
         roll_no = request.data.get('roll_no')
         password = request.data.get('password')
@@ -48,32 +105,43 @@ class StudentExaminationLogin(APIView):
 
                 try:
                     questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_date)
+
+                    question_paper_details = {
+                        'exam_name': questionpaper.exam_name,
+                        'total_time': questionpaper.total_time,
+                        'semester': questionpaper.semester,
+                        'department': questionpaper.department.department,  
+                        'subject': questionpaper.subject.subject, 
+                        'teacher': questionpaper.teacher.name,  
+                    }
+
+                    print(question_paper_details , "queeeeeeeeeeeeeeeeeeeeeeee")
+
+                    main_question = Questions.objects.filter(questionpaper=questionpaper).first()
+                    if main_question:
+                        try:
+                            question_image = QuestionImage.objects.get(question=main_question)
+                            question_image_data = question_image.image.url
+
+                            response_data = {
+                                'message': 'Login successful',
+                                'question_paper_details': question_paper_details,
+                                'q_image': question_image_data
+                            }
+                            return JsonResponse(response_data)
+
+                        except QuestionImage.DoesNotExist:
+                            return JsonResponse({'error': 'Question image not found'}, status=404)
+                    else:
+                        return JsonResponse({'error': 'No questions found for the exam'}, status=404)
+
                 except QuestionPaper.DoesNotExist:
                     return JsonResponse({'error': 'No exam scheduled for today'}, status=404)
-
-                try:
-                    main_question = Questions.objects.filter(questionpaper=questionpaper).first()
-                except Questions.DoesNotExist:
-                    return JsonResponse({'error': 'Questions not found for the exam'}, status=404)
-
-                if main_question:
-                    try:
-                        question_image = QuestionImage.objects.get(question=main_question)
-                        question_image_data = question_image.image.url
-                    except QuestionImage.DoesNotExist:
-                        return JsonResponse({'error': 'Question image not found'}, status=404)
-
-                    response_data = {'q_image': question_image_data}
-                    return JsonResponse({'message': 'Login successful', 'data': response_data})
-                else:
-                    return JsonResponse({'error': 'No questions found for the exam'}, status=404)
             else:
                 return JsonResponse({'error': 'Invalid credentials'}, status=401)
-            
+
         except Student.DoesNotExist:
             return JsonResponse({'error': 'Student not found'}, status=404)
-        
-
         
 class Answers(APIView):
     def post(self ,request):
