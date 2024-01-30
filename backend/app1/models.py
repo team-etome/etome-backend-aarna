@@ -22,11 +22,11 @@ class God(AbstractUser):
 class Admin(models.Model):
 
     instituteName            =   models.CharField(max_length=200)
-    emailid                  =   models.EmailField()
+    emailid                  =   models.EmailField(unique=True )
     password                 =   models.CharField()
-    address                  =   models.CharField(max_length=200)
     university               =   models.CharField(max_length=200)
     phn_number               =   models.CharField()
+    branch                   =   models.CharField(max_length = 20 , null = True , blank = True)
 
 
 
@@ -84,7 +84,7 @@ class Student(models.Model):
     email                 =  models.EmailField(unique=True)
     gender                =  models.CharField(max_length=15 ,blank= True , null = True)
     dob                   =  models.DateField(null = True , blank = True )
-    password              =  models.CharField(max_length=10 , blank=True , null=True),
+    password              =  models.CharField(max_length = 100 , null = True , blank = True)
     image                 =  models.ImageField(blank=True,null=True , upload_to='student')
     selected              =  models.BooleanField(default = False) 
 

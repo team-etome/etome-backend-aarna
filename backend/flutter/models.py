@@ -7,7 +7,7 @@ class Questions(models.Model):
     questionpaper = models.ForeignKey(QuestionPaper ,on_delete=models.CASCADE , null = True , blank = True )
     questioncode  = models.CharField(max_length = 10 )
 
-
+ 
 
     
 class QuestionImage(models.Model):
