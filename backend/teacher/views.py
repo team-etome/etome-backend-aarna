@@ -138,6 +138,7 @@ class TeacherLoginView(APIView):
                     'message': 'Login successful',
                     'token': teacher_token,
                     'qpaper_details': {
+
                         'id'      : qpaper_details.id,
                         'examName': qpaper_details.exam_name,
                         'department': qpaper_details.department.department,
@@ -263,10 +264,8 @@ class SeatingArrangementView(APIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        print(data,"bbbbbbbbbbbbbbbbbbbbbbbbbbb")
         pattern_type = data.get('seating_layout')
         pattern      = data.get('pattern')
-        print(pattern_type,"aaaaaaaaaaaaaaaaaaaaaaaaaa")
         department_ids = [int(id) for id in data.get('departments', []) if id.isdigit()]
         students = Student.objects.filter(department__id__in=department_ids, selected=False)
 
@@ -308,7 +307,7 @@ class SeatingArrangementView(APIView):
 
 
 
-        print(department_students  , "department students 2")
+      
       
         SeatingArrangement.objects.create(
             pattern=pattern,
@@ -331,11 +330,11 @@ class SeatingArrangementView(APIView):
 
     def get(self, request):
 
-        print("enteredddddddddddddd")
+      
 
         seating_arrangements = SeatingArrangement.objects.all().order_by('id')
 
-        print(seating_arrangements,'aaaaaaaaaaaaaaaaaaaa')
+       
 
         exam_names = [seating.exam_name for seating in seating_arrangements]
 
