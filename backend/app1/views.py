@@ -114,6 +114,8 @@ class AddDepartment(APIView):
                 'program'         :  department.program,
             })
 
+            print(departmentDetails,"..................................")
+
         return JsonResponse(departmentDetails, safe=False)
     
 
