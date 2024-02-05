@@ -123,8 +123,11 @@ class TeacherLoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
+        print(email,password,",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
+
         try:
             teacher = Teacher.objects.get(email=email)
+            print(teacher,"ttttttttttttttttttttttttttttttttttt")
             teacher_id = teacher.id
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
@@ -132,31 +135,55 @@ class TeacherLoginView(APIView):
         if teacher is not None and check_password(password, teacher.password):
             teacher_token = get_token(teacher, user_type='teacher')
             
-            try:
-                qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
-                qpaper_details = qpaper_assigned
+            # try:
+                # qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
+            qpaper_assigned=QuestionPaper.objects.all()
+            print(qpaper_assigned , "qpaper assigneddddddddddddddd")
+            qpaper_detail = []
 
-              
-                response_data = {
-                    'message': 'Login successful',
-                    'token': teacher_token,
-                    'qpaper_details': {
-                        'id'      : qpaper_details.id,
-                        'examName': qpaper_details.exam_name,
-                        'department': qpaper_details.department.department,
-                        'subject': qpaper_details.subject.subject,
-                        'semester': qpaper_details.semester,
-                        'total_time': qpaper_details.total_time,
-                        'exam_date': qpaper_details.exam_date,
-                        'vetTeacher1': qpaper_details.teacher.name,
-                        'teacherid'  : qpaper_details.teacher.id,
-                        'term': qpaper_details.term,
-                        'status': qpaper_details.status,
-                    }
+            for qpaper_details in qpaper_assigned:
+                qpaper_detail.append({
+
+                'id'      : qpaper_details.id,
+                'examName': qpaper_details.exam_name,
+                'department': qpaper_details.department.department,
+                'subject': qpaper_details.subject.subject,
+                'semester': qpaper_details.semester,
+                'total_time': qpaper_details.total_time,
+                'exam_date': qpaper_details.exam_date,
+                'vetTeacher1': qpaper_details.teacher.name,
+                'teacherid'  : qpaper_details.teacher.id,
+                'term': qpaper_details.term,
+                'status': qpaper_details.status,
+
+
+
                 }
-                return JsonResponse(response_data)
-            except QuestionPaper.DoesNotExist:
-                return JsonResponse({'message': 'Login successful', 'token': teacher_token})
+                )
+
+        
+            response_data = {
+                'message': 'Login successful',
+                'token': teacher_token,
+                'qpaper_detail': qpaper_detail,
+            
+                # 'qpaper_details': {
+                #     # 'id'      : qpaper_details.id,
+                #     'examName': qpaper_details.exam_name,
+                #     'department': qpaper_details.department.department,
+                #     'subject': qpaper_details.subject.subject,
+                #     'semester': qpaper_details.semester,
+                #     'total_time': qpaper_details.total_time,
+                #     'exam_date': qpaper_details.exam_date,
+                #     'vetTeacher1': qpaper_details.teacher.name,
+                #     'teacherid'  : qpaper_details.teacher.id,
+                #     'term': qpaper_details.term,
+                #     'status': qpaper_details.status,
+                # }
+            }
+            return JsonResponse(response_data)
+            # except QuestionPaper.DoesNotExist:
+            #     return JsonResponse({'message': 'Login successful', 'token': teacher_token})
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
         
@@ -278,72 +305,50 @@ class SeatingArrangementView(APIView):
         return columned_seating_arrangement, vacant_seats
     
 
-    #     def generate_seating(column=3, tables=5, student_per_table=2, student_ids_per_department=None):
-    #      if student_ids_per_department is None:
-    #         student_ids_per_department = {
-    #             'CS': [],
-    #             'BCA': [],
-    #             'MBA': []
-    #         }
+    def sequential_distribution(self, cols, rows, student_per_table, department_ids):
+        if department_ids is None:
+                department_ids = Department.objects.all().values_list('id', flat=True)
+        department_codes_per_department = Department.objects.filter(id__in=department_ids).values('id', 'department_code')
+        department_id_to_code = {dept['id']: dept['department_code'] for dept in department_codes_per_department}
+        for dept_id, dept_code in department_id_to_code.items():
+                print(f"Department Code: {dept_code}")
+        student_ids_per_department = {}
+        for department_id in department_ids:
+            student_ids = list(Student.objects.filter(department_id=department_id).order_by('roll_no').values_list('roll_no', flat=True))
+            student_ids_per_department[department_id] = student_ids
+            print(student_ids_per_department,"student id per department")
+        total_capacity_of_hall = student_per_table * rows
+        departments = len(department_ids)
+        print(departments,"departmentsssssssssssss")
+        department_labels = list(department_ids)
+        shuffle(department_labels)
+        total_students_from_each_department = total_capacity_of_hall // departments
+        print(total_students_from_each_department,"total_students_from_each_department")
+        # Initialize the seating arrangement list
+        seating_arrangement = []
+        vacant_seats = 0
 
-    #     # Calculate total capacity of the hall
-    #     total_capacity_of_hall = student_per_table * rows
+        # Populate the seating arrangement
+        for t in range(rows):
+            table = []
+            for s in range(student_per_table):
+                department_index = (t * student_per_table + s) % departments
+                department_id = department_ids[department_index]
+                department_code = department_id_to_code.get(department_id,"h")
+                if student_ids_per_department[department_id]:
+                    seat_label = f"{department_code}-{student_ids_per_department[department_id].pop(0)}"
+                    print(seat_label , "seat labelllllllllllllllllll")
+                else:
+                    seat_label = "Vacant-0"
+                    vacant_seats += 1
+                table.append(seat_label)
+            seating_arrangement.append(table)
+        columned_seating_arrangement = [seating_arrangement[i:i + cols] for i in range(0, len(seating_arrangement), cols)]
+           
 
-    #     # Determine the number of departments
-    #     departments = len(department_ids.keys())
+        return columned_seating_arrangement, vacant_seats
 
-    #     # Create a list to hold the department labels
-    #     department_labels = list(department_ids.keys())
-
-    #     # Assuming equal distribution of students from each department
-    #     total_students_from_each_department = total_capacity_of_hall // departments
-
-    #     # Selecting the required number of students from each department
-    #     for department in department_labels:
-    #         if len(department_ids[department]) > total_students_from_each_department:
-    #             student_ids_per_department[department] = student_ids_per_department[department][:total_students_from_each_department]
-
-    #     # Initialize the seating arrangement list
-    #     seating_arrangement = []
-    #     vacant_seats = 0
-    #     # Populate the seating arrangement
-    #     for t in range(tables):
-    #         table = []
-    #         for s in range(student_per_table):
-    #             # Determine the department for the current seat using a round-robin distribution method
-    #             department_index = (t * student_per_table + s) % departments
-    #             department = department_labels[department_index]
-    #             if student_ids_per_department[department]:
-    #                 seat_label = f"{department}{student_ids_per_department[department].pop(0)}"
-    #             else:
-    #                 seat_label = "Vacant"
-    #                 vacant_seats += 1
-    #             table.append(seat_label)
-    #         seating_arrangement.append(table)
-
-    #     # Arrange these tables into columns
-    #     columned_seating_arrangement = [seating_arrangement[i:i + column] for i in range(0, len(seating_arrangement), column)]
-
-    #     return columned_seating_arrangement,vacant_seats
-
-    # # Example student ID lists
-    # cs_students = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114]
-    # bca_students = [200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214]
-    # mba_students = [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314]
-
-    # # Generate the seating arrangement for the exam
-    # seating_arrangement_exam,vacant = generate_seating(
-    #     student_ids_per_department={
-    #         'CS': cs_students,
-    #         'BCA': bca_students,
-    #         'MBA': mba_students
-    #     }
-    # )
-    # print(seating_arrangement_exam)
-    # print(vacant)
-    
         
-
     def post(self, request, *args, **kwargs):
         data = request.data
         # print(data,"bbbbbbbbbbbbbbbbbbbbbbbbbbb")
@@ -380,12 +385,15 @@ class SeatingArrangementView(APIView):
             cloned_dept_students = copy.deepcopy(department_students)
             seating_arrangement, vacant_seats = self.patterned_distribution(cols, rows, students_per_bench, department_ids)
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
-        # elif pattern_type == 'sequential':
-        #     # Similarly, clone for the sequential distribution
-        #     cloned_dept_students = copy.deepcopy(department_students)
-        #     seating_arrangement = self.sequential_distribution(cloned_dept_students, rows, cols, students_per_bench)
-        # else:
-        #     return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif pattern_type == 'sequential':
+            print("enterrrreddddddddddddddddddd")
+            # Similarly, clone for the sequential distribution
+            cloned_dept_students = copy.deepcopy(department_students)
+            seating_arrangement,vacant_seats = self.sequential_distribution(  cols,rows, students_per_bench,department_ids)
+            print(seating_arrangement , vacant_seats ,"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+            columned_seating_arrangement_json = json.dumps(seating_arrangement)
+        else:
+            return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -466,6 +474,7 @@ class SeatingArrangementView(APIView):
 
 
         return JsonResponse(seatingDetails, safe=False)
+        
 
         
 
