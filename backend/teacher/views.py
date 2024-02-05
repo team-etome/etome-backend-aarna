@@ -15,6 +15,9 @@ from django.shortcuts import get_object_or_404
 from django.conf import settings
 from datetime import datetime
 import copy
+from random import shuffle
+import json
+
 # from rest_framework.permissions import IsAuthenticated
 
 
@@ -222,52 +225,132 @@ class QpaperModule(APIView):
         
 
 
+# .values_list('id', flat=True)
+
+
 class SeatingArrangementView(APIView):
-    
-    def patterned_distribution(self, dept_students, rows, cols, students_per_bench):
-      
-        assert all(len(students) >= students_per_bench for students in dept_students.values())
+     
+    def patterned_distribution(self,cols, rows, student_per_table, department_ids):
+
+        print(rows , cols, student_per_table , department_ids , "ssssssssssssssssssssssssssssssss")
+
+        if department_ids is None:
+            department_ids = Department.objects.all().values_list('id', flat=True)
+        department_codes_per_department = Department.objects.filter(id__in=department_ids).values('id', 'department_code')
+        department_id_to_code = {dept['id']: dept['department_code'] for dept in department_codes_per_department}
+        for dept_id, dept_code in department_id_to_code.items():
+            print(f"Department Code: {dept_code}")
+        student_ids_per_department = {}
+        for department_id in department_ids:
+            student_ids = list(Student.objects.filter(department_id=department_id).order_by('roll_no').values_list('roll_no', flat=True))
+            student_ids_per_department[department_id] = student_ids
+        total_capacity_of_hall = student_per_table * rows
+        print(total_capacity_of_hall,"totalllllllllllllllllll")
+        departments = len(department_ids)
+        department_labels = list(department_ids)
+        shuffle(department_labels)
+        total_students_from_each_department = total_capacity_of_hall // departments
         seating_arrangement = []
-        dept_keys = list(dept_students.keys())
-        total_depts = len(dept_keys)
-
-        for bench_num in range(rows * cols):
-            bench_students = []
-            for student_num in range(students_per_bench):
-                dept_index = (bench_num + student_num) % total_depts
-                dept_key = dept_keys[dept_index]
-                if dept_students[dept_key]:
-                    bench_students.append(dept_students[dept_key].pop(0))
-            seating_arrangement.append(bench_students)
-
-        return seating_arrangement
-
-    def sequential_distribution(self, dept_students, rows, cols, students_per_bench):
-        seating_arrangement = []
-        max_students_per_dept = max(len(students) for students in dept_students.values())
-
-        for bench_num in range(rows * cols):
-            bench_students = []
-            for dept_key in dept_students.keys():
-                student_num = bench_num // cols
-                if student_num < len(dept_students[dept_key]):
-                    bench_students.append(dept_students[dept_key][student_num])
+        vacant_seats = 0
+        for t in range(rows):
+            table = []
+            for s in range(student_per_table):
+               
+                department_index = (t * student_per_table + s) % departments
+                department_id = department_labels[department_index]
+             
+                # departmen=department_id
+                # print(departmen)
+                # f=int(department_id)
+                department_code = department_id_to_code.get(department_id,"h")
+               
+                if student_ids_per_department[department_id]:
+                    seat_label = f"{department_code}-{student_ids_per_department[department_id].pop(0)}"
                 else:
-                    # Add None for empty seats
-                    bench_students.append(None) 
+                    seat_label = "Vacant-0"
+                    vacant_seats += 1
+                table.append(seat_label)
 
-            seating_arrangement.append(bench_students)
+            seating_arrangement.append(table)
+            print(vacant_seats,"vacant_seats ssssssssssssssssssssssss")
+        columned_seating_arrangement = [seating_arrangement[i:i + cols] for i in range(0, len(seating_arrangement), cols)]
 
-        return seating_arrangement
+        return columned_seating_arrangement, vacant_seats
+    
 
+    #     def generate_seating(column=3, tables=5, student_per_table=2, student_ids_per_department=None):
+    #      if student_ids_per_department is None:
+    #         student_ids_per_department = {
+    #             'CS': [],
+    #             'BCA': [],
+    #             'MBA': []
+    #         }
+
+    #     # Calculate total capacity of the hall
+    #     total_capacity_of_hall = student_per_table * rows
+
+    #     # Determine the number of departments
+    #     departments = len(department_ids.keys())
+
+    #     # Create a list to hold the department labels
+    #     department_labels = list(department_ids.keys())
+
+    #     # Assuming equal distribution of students from each department
+    #     total_students_from_each_department = total_capacity_of_hall // departments
+
+    #     # Selecting the required number of students from each department
+    #     for department in department_labels:
+    #         if len(department_ids[department]) > total_students_from_each_department:
+    #             student_ids_per_department[department] = student_ids_per_department[department][:total_students_from_each_department]
+
+    #     # Initialize the seating arrangement list
+    #     seating_arrangement = []
+    #     vacant_seats = 0
+    #     # Populate the seating arrangement
+    #     for t in range(tables):
+    #         table = []
+    #         for s in range(student_per_table):
+    #             # Determine the department for the current seat using a round-robin distribution method
+    #             department_index = (t * student_per_table + s) % departments
+    #             department = department_labels[department_index]
+    #             if student_ids_per_department[department]:
+    #                 seat_label = f"{department}{student_ids_per_department[department].pop(0)}"
+    #             else:
+    #                 seat_label = "Vacant"
+    #                 vacant_seats += 1
+    #             table.append(seat_label)
+    #         seating_arrangement.append(table)
+
+    #     # Arrange these tables into columns
+    #     columned_seating_arrangement = [seating_arrangement[i:i + column] for i in range(0, len(seating_arrangement), column)]
+
+    #     return columned_seating_arrangement,vacant_seats
+
+    # # Example student ID lists
+    # cs_students = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114]
+    # bca_students = [200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214]
+    # mba_students = [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314]
+
+    # # Generate the seating arrangement for the exam
+    # seating_arrangement_exam,vacant = generate_seating(
+    #     student_ids_per_department={
+    #         'CS': cs_students,
+    #         'BCA': bca_students,
+    #         'MBA': mba_students
+    #     }
+    # )
+    # print(seating_arrangement_exam)
+    # print(vacant)
+    
+        
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        print(data,"bbbbbbbbbbbbbbbbbbbbbbbbbbb")
+        # print(data,"bbbbbbbbbbbbbbbbbbbbbbbbbbb")
         pattern_type = data.get('seating_layout')
         pattern      = data.get('pattern')
         print(pattern_type,"aaaaaaaaaaaaaaaaaaaaaaaaaa")
-        department_ids = [int(id) for id in data.get('departments', []) if id.isdigit()]
+        department_ids = [int(id) for id in data.get('departments', [])]
         students = Student.objects.filter(department__id__in=department_ids, selected=False)
 
         department_students = {}
@@ -277,9 +360,7 @@ class SeatingArrangementView(APIView):
                 department_students[dept_id] = []
             department_students[dept_id].append(student.roll_no)
 
-        print(department_students  , "department students 1")
         
-      
         hall_name = data.get('hallName')
         teacher_id = data.get('teacher')
         exam_name = data.get('exam_name')
@@ -291,24 +372,25 @@ class SeatingArrangementView(APIView):
         rows = int(data.get('rows'))
         cols = int(data.get('cols'))
         students_per_bench = int(data.get('studentsPerBench'))
-
-      
+       
         exam_date_obj = datetime.strptime(exam_date, '%Y-%m-%d').date()
    
         if pattern_type == 'patterned':
             # Clone the dictionary before passing to the function
             cloned_dept_students = copy.deepcopy(department_students)
-            seating_arrangement = self.patterned_distribution(cloned_dept_students, rows, cols, students_per_bench)
-        elif pattern_type == 'sequential':
-            # Similarly, clone for the sequential distribution
-            cloned_dept_students = copy.deepcopy(department_students)
-            seating_arrangement = self.sequential_distribution(cloned_dept_students, rows, cols, students_per_bench)
-        else:
-            return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            seating_arrangement, vacant_seats = self.patterned_distribution(cols, rows, students_per_bench, department_ids)
+            columned_seating_arrangement_json = json.dumps(seating_arrangement)
+        # elif pattern_type == 'sequential':
+        #     # Similarly, clone for the sequential distribution
+        #     cloned_dept_students = copy.deepcopy(department_students)
+        #     seating_arrangement = self.sequential_distribution(cloned_dept_students, rows, cols, students_per_bench)
+        # else:
+        #     return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
-        print(department_students  , "department students 2")
+        # print(department_students  , "department students 2")
+        
       
         SeatingArrangement.objects.create(
             pattern=pattern,
@@ -318,11 +400,11 @@ class SeatingArrangementView(APIView):
             exam_date=exam_date_obj,
             exam_time=exam_time,
             seating_layout=seating_layout,
-            department_students=department_students
+            department_students=columned_seating_arrangement_json 
         )
 
-        selected_student_ids = [student.id for student in students]
-        Student.objects.filter(id__in=selected_student_ids).update(selected=True)
+        # selected_student_ids = [student.id for student in students]
+        # Student.objects.filter(id__in=selected_student_ids).update(selected=True)
 
         
 
@@ -331,11 +413,11 @@ class SeatingArrangementView(APIView):
 
     def get(self, request):
 
-        print("enteredddddddddddddd")
+        
 
         seating_arrangements = SeatingArrangement.objects.all().order_by('id')
 
-        print(seating_arrangements,'aaaaaaaaaaaaaaaaaaaa')
+    
 
         exam_names = [seating.exam_name for seating in seating_arrangements]
 
@@ -352,33 +434,35 @@ class SeatingArrangementView(APIView):
         for seating in seating_arrangements:
 
            
-            department_students = seating.department_students
-            student_count = sum(len(student_list) for student_list in department_students.values())
-            total_student_count += student_count
-            department_count = len(department_students)
-            total_department_count += department_count
-            department_id = list(department_students.keys())[0]
+            # department_students = seating.department_students
+            # student_count = sum(len(student_list) for student_list in department_students.values())
+            # total_student_count += student_count
+            # department_count = len(department_students)
+            # total_department_count += department_count
+            # department_id = list(department_students.keys())[0]
 
-            if department_students:
-                department_id = list(department_students.keys())[0]
-                department = Department.objects.get(id=department_id)  
-                department_code = department.department_code
-            else:
-                department_code = 'N/A'
+            # if department_students:
+            #     department_id = list(department_students.keys())[0]
+            #     department = Department.objects.get(id=department_id)  
+            #     department_code = department.department_code
+            # else:
+            #     department_code = 'N/A'
 
             detail = {
 
                 'hall_name': seating.hall_name,
                 'teacher': seating.teacher.name,
                 'term_data': term_data,
-                'student_count': student_count,
-                'department_count': department_count,
-                'department_code': department_code
+                # 'student_count': student_count,
+                # 'department_count': department_count,
+                # 'department_code': department_code,
+                'department_students' : seating.department_students
             }
 
             seatingDetails.append(detail)
+            print(seatingDetails , "seatinggggggggggggggggggggggggggggggggggggg")
 
-            print(seatingDetails,'seating detailssss')
+           
 
 
         return JsonResponse(seatingDetails, safe=False)
