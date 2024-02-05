@@ -44,7 +44,7 @@ class Evaluation(models.Model):
     answer         = models.ForeignKey(Answer ,on_delete=models.CASCADE,null = True , blank = True )
     mark_data      = models.JSONField()
     total_mark     = models.CharField(max_length=50)
-    teacher        = models.ForeignKey(Teacher , on_delete=models.CASCADE, null = True, blank= True)
+    # teacher        = models.ForeignKey(Teacher , on_delete=models.CASCADE, null = True, blank= True)
     date           = models.CharField(max_length=50)
     # student        = models.ForeignKey(Student ,on_delete=models.CASCADE, null = True, blank= True)
     # question_code  = models.CharField(max_length=50)
