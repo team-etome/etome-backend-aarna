@@ -46,27 +46,19 @@ class GodLoginView(APIView):
 class AdminLoginView(APIView):
 
     def post(self, request, *args, **kwargs):
-        email     =  request.data.get('emailid')
-        password  =  request.data.get('password')
+        email = request.data.get('emailid')
+        password = request.data.get('password')
 
         try:
-            user = Admin.objects.get(emailid = email)
-         
+            user = Admin.objects.get(emailid=email)
         except Admin.DoesNotExist:
-            user = None
+            return JsonResponse({'error': 'No admin found with this email'}, status=404)
 
-        if user is not None and check_password(password , user.password):
-
-            admin_token = get_token(user , user_type='admin')
-
-
-            return JsonResponse({'message': 'Login successful','token' : admin_token })
-        
+        if check_password(password, user.password):
+            admin_token = get_token(user, user_type='admin')
+            return JsonResponse({'message': 'Login successful', 'token': admin_token})
         else:
-
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
-        
-
+            return JsonResponse({'error': 'Invalid password'}, status=401)
 
 
 
@@ -95,6 +87,7 @@ class AddDepartment(APIView):
             return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
         else:
+            print(department_Serializer.errors,"aaaaaaaaaaaaaaa")
             return Response(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
@@ -114,7 +107,6 @@ class AddDepartment(APIView):
                 'program'         :  department.program,
             })
 
-            print(departmentDetails,"..................................")
 
         return JsonResponse(departmentDetails, safe=False)
     
@@ -154,7 +146,6 @@ class AddDepartment(APIView):
 class AddSubject(APIView):
     def post(self,request):
         data = request.data
-        print(data , "dataaaaaaaaaaaaaa")
         subject_Serializer = SubjectSerializer(data = data)
 
         if subject_Serializer.is_valid():
@@ -194,7 +185,6 @@ class AddSubject(APIView):
     def put(self , request):
 
         data = request.data
-        print(data ,"aaaaaaaaaaaaaaaa")
         id   = data.get('id')
 
         try:
@@ -324,7 +314,6 @@ class SendInvite(APIView):
             server.login(sender_mail, password)
             server.sendmail(sender_mail, recipient_email, msg.as_string())
             server.quit()
-            print("Email sent successfully to", recipient_email)
         except Exception as e:
             print("Error sending email:", str(e))
 
@@ -357,8 +346,6 @@ class AddTeacher(APIView):
         if teacher_serializer.is_valid():
             teacher = teacher_serializer.save()
             image_url = teacher.image.url
-
-            print(image_url,"imageeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
             return Response({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
         else:
