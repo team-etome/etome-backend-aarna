@@ -77,19 +77,25 @@ class AddAdmin(APIView):
 
 #Add Department    
 class AddDepartment(APIView):
-    def post(self,request):
-        data = request.data
-        department_Serializer = DepartmentSerializer(data = data)
 
+    def post(self, request):
+        data = request.data
+        name = data.get('department')
+        code = data.get('department_code')
+
+        if Department.objects.filter(department=name).exists():
+            print("enterrrrrrr")
+            return Response({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Department.objects.filter(department_code = code).exists():
+            return Response({'error': 'A department with this code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        department_Serializer = DepartmentSerializer(data=data)
         if department_Serializer.is_valid():
             department_Serializer.save()
-
             return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        
         else:
-            print(department_Serializer.errors,"aaaaaaaaaaaaaaa")
             return Response(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 
     def get(self, request):
 
