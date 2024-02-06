@@ -130,13 +130,14 @@ class Answers(APIView):
 
             'answer_id' : answer.id,
             'studentId': answer.student_id,
+            'roll_number' : answer.student.roll_no,
             'question': answer.question_id,
+            'question_code': answer.question.questioncode,
             'date': answer.date,
             'answerData': answer.answer_data,
             
         } for answer in answers]
 
-        print(answerdetails,"answerdetailssssssssssssssss")
         
         return JsonResponse({'data': answerdetails})
         

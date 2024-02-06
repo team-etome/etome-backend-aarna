@@ -35,7 +35,6 @@ class TeacherDetails(APIView):
 
             if teacher.image:
                 image_url = request.build_absolute_uri(settings.MEDIA_URL + str(teacher.image))
-                print(image_url,"image urllll")
             else:
                 image_url = None
 
