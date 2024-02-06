@@ -5,6 +5,7 @@ from app1.models import *
 from flutter.models import *
 from .models import *
 from app1.serializers import * 
+from aarna.serializers import *
 from flutter.serializers import * 
 from rest_framework.exceptions import ValidationError
 from app1.token import get_token
@@ -95,15 +96,25 @@ class EvaluationAssign(APIView):
 
 
 class HallTicket(APIView):
-    def get(self,request,id ,*args,**kwargs):
-        
-        student = Student.objects.get(id = id)
-        department_id = student.department
-        timetable = TimeTable.objects.filter(department_id = department_id).order_by('exam_date')
+    def get(self, request, *args, **kwargs):
+        data = request.data
+        roll_number = data.get('roll_no') 
+        try:
+            student = Student.objects.get(roll_no=roll_number)
+            student_serializer = StudentSerializer(student)
 
-        studentdetails = []
+            timetable = TimeTable.objects.filter(department_id=student.department_id).order_by('exam_date')
+            timetable_serializer = TimeTableSerializer(timetable, many=True)  
 
+         
+            response_data = {
+                'student': student_serializer.data,
+                'timetable': timetable_serializer.data
+            }
 
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Student.DoesNotExist:
+            return Response({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class QuestionsView(APIView):
 

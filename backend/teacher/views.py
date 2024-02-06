@@ -122,11 +122,10 @@ class TeacherLoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        print(email,password,",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
+       
 
         try:
             teacher = Teacher.objects.get(email=email)
-            print(teacher,"ttttttttttttttttttttttttttttttttttt")
             teacher_id = teacher.id
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
@@ -137,8 +136,18 @@ class TeacherLoginView(APIView):
             # try:
                 # qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
             qpaper_assigned=QuestionPaper.objects.all()
-            print(qpaper_assigned , "qpaper assigneddddddddddddddd")
+            question_paper_images      = QuestionImage.objects.all()
             qpaper_detail = []
+
+            question_paper = []
+
+            for   question_paper_image in   question_paper_images :
+
+                question_paper.append({
+                    'question_id' : question_paper_image.id,
+                    'question' : question_paper_image.image
+
+                })
 
             for qpaper_details in qpaper_assigned:
                 qpaper_detail.append({
@@ -154,38 +163,17 @@ class TeacherLoginView(APIView):
                 'teacherid'  : qpaper_details.teacher.id,
                 'term': qpaper_details.term,
                 'status': qpaper_details.status,
-
-
-
-<<<<<<< HEAD
-=======
-              
-                response_data = {
-                    'message': 'Login successful',
-                    'token': teacher_token,
-                    'qpaper_details': {
-
-                        'id'      : qpaper_details.id,
-                        'examName': qpaper_details.exam_name,
-                        'department': qpaper_details.department.department,
-                        'subject': qpaper_details.subject.subject,
-                        'semester': qpaper_details.semester,
-                        'total_time': qpaper_details.total_time,
-                        'exam_date': qpaper_details.exam_date,
-                        'vetTeacher1': qpaper_details.teacher.name,
-                        'teacherid'  : qpaper_details.teacher.id,
-                        'term': qpaper_details.term,
-                        'status': qpaper_details.status,
-                    }
->>>>>>> c310b3a6b602fcbb97d9a5d6099da25fd2caa67b
+                
                 }
                 )
 
-        
+                
+
             response_data = {
                 'message': 'Login successful',
                 'token': teacher_token,
                 'qpaper_detail': qpaper_detail,
+                'question_paper' : question_paper,
             
                 # 'qpaper_details': {
                 #     # 'id'      : qpaper_details.id,
@@ -279,8 +267,6 @@ class SeatingArrangementView(APIView):
      
     def patterned_distribution(self,cols, rows, student_per_table, department_ids):
 
-        print(rows , cols, student_per_table , department_ids , "ssssssssssssssssssssssssssssssss")
-
         if department_ids is None:
             department_ids = Department.objects.all().values_list('id', flat=True)
         department_codes_per_department = Department.objects.filter(id__in=department_ids).values('id', 'department_code')
@@ -306,9 +292,6 @@ class SeatingArrangementView(APIView):
                 department_index = (t * student_per_table + s) % departments
                 department_id = department_labels[department_index]
              
-                # departmen=department_id
-                # print(departmen)
-                # f=int(department_id)
                 department_code = department_id_to_code.get(department_id,"h")
                
                 if student_ids_per_department[department_id]:
@@ -319,7 +302,6 @@ class SeatingArrangementView(APIView):
                 table.append(seat_label)
 
             seating_arrangement.append(table)
-            print(vacant_seats,"vacant_seats ssssssssssssssssssssssss")
         columned_seating_arrangement = [seating_arrangement[i:i + cols] for i in range(0, len(seating_arrangement), cols)]
 
         return columned_seating_arrangement, vacant_seats
@@ -336,15 +318,12 @@ class SeatingArrangementView(APIView):
         for department_id in department_ids:
             student_ids = list(Student.objects.filter(department_id=department_id).order_by('roll_no').values_list('roll_no', flat=True))
             student_ids_per_department[department_id] = student_ids
-            print(student_ids_per_department,"student id per department")
         total_capacity_of_hall = student_per_table * rows
         departments = len(department_ids)
-        print(departments,"departmentsssssssssssss")
         department_labels = list(department_ids)
         shuffle(department_labels)
         total_students_from_each_department = total_capacity_of_hall // departments
-        print(total_students_from_each_department,"total_students_from_each_department")
-        # Initialize the seating arrangement list
+
         seating_arrangement = []
         vacant_seats = 0
 
@@ -357,7 +336,6 @@ class SeatingArrangementView(APIView):
                 department_code = department_id_to_code.get(department_id,"h")
                 if student_ids_per_department[department_id]:
                     seat_label = f"{department_code}-{student_ids_per_department[department_id].pop(0)}"
-                    print(seat_label , "seat labelllllllllllllllllll")
                 else:
                     seat_label = "Vacant-0"
                     vacant_seats += 1
@@ -371,11 +349,8 @@ class SeatingArrangementView(APIView):
         
     def post(self, request, *args, **kwargs):
         data = request.data
-
-        # print(data,"bbbbbbbbbbbbbbbbbbbbbbbbbbb")
         pattern_type = data.get('seating_layout')
         pattern      = data.get('pattern')
-        print(pattern_type,"aaaaaaaaaaaaaaaaaaaaaaaaaa")
         department_ids = [int(id) for id in data.get('departments', [])]
         students = Student.objects.filter(department__id__in=department_ids, selected=False)
 
@@ -402,16 +377,14 @@ class SeatingArrangementView(APIView):
         exam_date_obj = datetime.strptime(exam_date, '%Y-%m-%d').date()
    
         if pattern_type == 'patterned':
-            # Clone the dictionary before passing to the function
             cloned_dept_students = copy.deepcopy(department_students)
             seating_arrangement, vacant_seats = self.patterned_distribution(cols, rows, students_per_bench, department_ids)
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
         elif pattern_type == 'sequential':
-            print("enterrrreddddddddddddddddddd")
+
             # Similarly, clone for the sequential distribution
             cloned_dept_students = copy.deepcopy(department_students)
             seating_arrangement,vacant_seats = self.sequential_distribution(  cols,rows, students_per_bench,department_ids)
-            print(seating_arrangement , vacant_seats ,"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
         else:
             return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
