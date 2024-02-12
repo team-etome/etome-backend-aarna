@@ -58,8 +58,8 @@ class Semester(models.Model):
 
 
 class Teacher(models.Model):
-    departments   =  models.ManyToManyField(Department, blank=True)
-    subjects      =  models.ManyToManyField(Subject, blank=True)
+    departments   =  models.ManyToManyField(Department)
+    subjects      =  models.ManyToManyField(Subject)
     semester      =  models.ForeignKey(Semester , on_delete=models.CASCADE , null=True , blank=True) 
     name          =  models.CharField(max_length=50)
     email         =  models.EmailField(unique=True,blank=True)
