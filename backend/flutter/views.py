@@ -45,6 +45,7 @@ class StudentExaminationLogin(APIView):
 
         try:
             user = Student.objects.get(roll_no=roll_no)
+           
 
            
             if user is not None and check_password(password, user.password):
@@ -56,7 +57,7 @@ class StudentExaminationLogin(APIView):
                     questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_date)
                     main_question = Questions.objects.filter(questionpaper=questionpaper).first()
 
-                    print( main_question.questioncode,"question code")
+                   
                     
 
                 
@@ -75,6 +76,8 @@ class StudentExaminationLogin(APIView):
                         
 
                     }
+
+                    print(question_paper_details,'qqqqqqqqqqqqqqqqqqqqqqqqq')
 
 
                    

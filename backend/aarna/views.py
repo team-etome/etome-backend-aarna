@@ -101,6 +101,7 @@ class EvaluationAssign(APIView):
 
 
 class HallTicket(APIView):
+
     def get(self, request, *args, **kwargs):
         data = request.data
         roll_number = data.get('roll_no') 
@@ -113,8 +114,10 @@ class HallTicket(APIView):
 
          
             response_data = {
-                'student': student_serializer.data,
-                'timetable': timetable_serializer.data
+                'student'         : student_serializer.data,
+                'department_name' : student.department.department,
+                'image_url'       : student.image.url ,
+                'timetable'       : timetable_serializer.data
             }
 
             return JsonResponse(response_data, status=status.HTTP_200_OK)
