@@ -54,4 +54,4 @@ class BlueprintSerializer(serializers.ModelSerializer):
 class SeatingArrangementSerializer(serializers.ModelSerializer):
      class Meta:
         model   = SeatingArrangement
-        fields = ['id','pattern','hall_name','teacher_name','exam_name','exam_date','exam_time','department_students','seating_layout']
+        fields = ['id','pattern','hall_name','teacher','exam_name','exam_date','exam_time','department_students','seating_layout']

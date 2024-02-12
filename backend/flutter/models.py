@@ -65,3 +65,4 @@ class SeatingArrangement(models.Model):
     exam_time            =  models.CharField()
     seating_layout       =  models.CharField(max_length = 50, null = True , blank = True)
     department_students  =  models.JSONField(null=True, blank=True)
+    department_ids       = models.JSONField(null = True , blank = True)

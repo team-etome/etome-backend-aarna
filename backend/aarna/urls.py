@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/hallticket', views.HallTicket.as_view(), name='hallticket'),
     path('api/evaluationAssign',views.EvaluationAssign.as_view(),name='evaluationAssign'),
     path('api/Questions',views.QuestionsView.as_view(),name='Questions'),
+    path('api/invigilatorLogin',views.InvgilatorLogin.as_view(),name='invigilator'),
 
 
 ]

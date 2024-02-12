@@ -17,6 +17,7 @@ from datetime import datetime
 import copy
 from random import shuffle
 import json
+import ast
 
 # from rest_framework.permissions import IsAuthenticated
 
@@ -122,8 +123,6 @@ class TeacherLoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
-       
-
         try:
             teacher = Teacher.objects.get(email=email)
             teacher_id = teacher.id
@@ -133,65 +132,34 @@ class TeacherLoginView(APIView):
         if teacher is not None and check_password(password, teacher.password):
             teacher_token = get_token(teacher, user_type='teacher')
             
-            # try:
-                # qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
-            qpaper_assigned=QuestionPaper.objects.all()
-            question_paper_images      = QuestionImage.objects.all()
-            qpaper_detail = []
+            try:
+                qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
 
-            question_paper = []
 
-            for   question_paper_image in   question_paper_images :
-
-                question_paper.append({
-                    'question_id' : question_paper_image.id,
-                    'question' : question_paper_image.image
-
-                })
-
-            for qpaper_details in qpaper_assigned:
-                qpaper_detail.append({
-
-                'id'      : qpaper_details.id,
-                'examName': qpaper_details.exam_name,
-                'department': qpaper_details.department.department,
-                'subject': qpaper_details.subject.subject,
-                'semester': qpaper_details.semester,
-                'total_time': qpaper_details.total_time,
-                'exam_date': qpaper_details.exam_date,
-                'vetTeacher1': qpaper_details.teacher.name,
-                'teacherid'  : qpaper_details.teacher.id,
-                'term': qpaper_details.term,
-                'status': qpaper_details.status,
-                
+                response_data = {
+                    'message': 'Login successful',
+                    'token': teacher_token,
+                    'qpaper_details': {
+                        'id'      : qpaper_assigned.id,
+                        'examName': qpaper_assigned.exam_name,
+                        'department': qpaper_assigned.department.department,
+                        'subject': qpaper_assigned.subject.subject,
+                        'semester': qpaper_assigned.semester,
+                        'total_time': qpaper_assigned.total_time,
+                        'exam_date': qpaper_assigned.exam_date,
+                        'vetTeacher1': qpaper_assigned.teacher.name,
+                        'teacherid'  : qpaper_assigned.teacher.id,
+                        'term': qpaper_assigned.term,
+                        'status': qpaper_assigned.status,
+                    }
                 }
-                )
 
                 
 
-            response_data = {
-                'message': 'Login successful',
-                'token': teacher_token,
-                'qpaper_detail': qpaper_detail,
-                'question_paper' : question_paper,
-            
-                # 'qpaper_details': {
-                #     # 'id'      : qpaper_details.id,
-                #     'examName': qpaper_details.exam_name,
-                #     'department': qpaper_details.department.department,
-                #     'subject': qpaper_details.subject.subject,
-                #     'semester': qpaper_details.semester,
-                #     'total_time': qpaper_details.total_time,
-                #     'exam_date': qpaper_details.exam_date,
-                #     'vetTeacher1': qpaper_details.teacher.name,
-                #     'teacherid'  : qpaper_details.teacher.id,
-                #     'term': qpaper_details.term,
-                #     'status': qpaper_details.status,
-                # }
-            }
-            return JsonResponse(response_data)
-            # except QuestionPaper.DoesNotExist:
-            #     return JsonResponse({'message': 'Login successful', 'token': teacher_token})
+
+                return JsonResponse(response_data)
+            except QuestionPaper.DoesNotExist:
+                return JsonResponse({'message': 'Login successful', 'token': teacher_token})
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
         
@@ -278,7 +246,6 @@ class SeatingArrangementView(APIView):
             student_ids = list(Student.objects.filter(department_id=department_id).order_by('roll_no').values_list('roll_no', flat=True))
             student_ids_per_department[department_id] = student_ids
         total_capacity_of_hall = student_per_table * rows
-        print(total_capacity_of_hall,"totalllllllllllllllllll")
         departments = len(department_ids)
         department_labels = list(department_ids)
         shuffle(department_labels)
@@ -352,7 +319,14 @@ class SeatingArrangementView(APIView):
         pattern_type = data.get('seating_layout')
         pattern      = data.get('pattern')
         department_ids = [int(id) for id in data.get('departments', [])]
-        students = Student.objects.filter(department__id__in=department_ids, selected=False)
+        print(department_ids,"department idsssssss")
+
+
+        try:
+         students = Student.objects.filter(department__id__in=department_ids , selected=False)
+        except Student.DoesNotExist:
+            print("Student not found")
+       
 
         department_students = {}
         for student in students:
@@ -401,32 +375,26 @@ class SeatingArrangementView(APIView):
             exam_date=exam_date_obj,
             exam_time=exam_time,
             seating_layout=seating_layout,
-            department_students=columned_seating_arrangement_json 
+            department_students=columned_seating_arrangement_json,
+            department_ids=json.dumps(department_ids)
         )
 
-        # selected_student_ids = [student.id for student in students]
-        # Student.objects.filter(id__in=selected_student_ids).update(selected=True)
+        selected_student_ids = [student.id for student in students]
+        Student.objects.filter(id__in=selected_student_ids).update(selected=True)
+
 
         
-
         return Response({'seating_arrangement': seating_arrangement}, status=status.HTTP_200_OK)
     
 
     def get(self, request):
 
-        
-
         seating_arrangements = SeatingArrangement.objects.all().order_by('id')
-
-    
-
-
         exam_names = [seating.exam_name for seating in seating_arrangements]
 
         question_papers = QuestionPaper.objects.filter(exam_name__in=exam_names)
-
-        term_data = [paper.term for paper in question_papers]
-
+        term_data = set(paper.term for paper in question_papers)
+        term_data = list(term_data)
         seatingDetails = []
 
         total_student_count = 0
@@ -434,37 +402,70 @@ class SeatingArrangementView(APIView):
 
 
         for seating in seating_arrangements:
+            seatingDetails.append({
+               'hall_name' : seating.hall_name , 
+               'department_students' : seating.department_students,
+               'term_data'           : term_data,
+               'teacher'             : seating.teacher.name
 
+            })
            
-            # department_students = seating.department_students
-            # student_count = sum(len(student_list) for student_list in department_students.values())
-            # total_student_count += student_count
-            # department_count = len(department_students)
-            # total_department_count += department_count
-            # department_id = list(department_students.keys())[0]
+        #     student_count = sum(len(student_list) for student_list in department_students.values())
+        #     total_student_count += student_count
+        #     department_count = len(department_students)
+        #     total_department_count += department_count
+        #     department_id = list(department_students.keys())[0]
 
-            # if department_students:
-            #     department_id = list(department_students.keys())[0]
-            #     department = Department.objects.get(id=department_id)  
-            #     department_code = department.department_code
-            # else:
-            #     department_code = 'N/A'
+        #     if department_students:
+        #         department_id = list(department_students.keys())[0]
+        #         department = Department.objects.get(id=department_id)  
+        #         department_code = department.department_code
+        #     else:
+        #         department_code = 'N/A'
 
-            detail = {
+        #     department_student_counts = {}  
 
-                'hall_name': seating.hall_name,
-                'teacher': seating.teacher.name,
-                'term_data': term_data,
-                # 'student_count': student_count,
-                # 'department_count': department_count,
-                # 'department_code': department_code,
-                'department_students' : seating.department_students
-            }
+        #     for seating in seating_arrangements:
+               
+        #         try:
+        #             department_students = json.loads(seating.department_students)
+        #         except json.JSONDecodeError:
+        #             department_students = []  
+        #         department_codes = set()
+                # for row in department_students:
+                #     for group in row:
+                #         for seat in group:
+                #             if seat != "Vacant-0":
+                #                 department_code, _ = seat.split("-")[0]
+                #                 department_codes.add(department_code)
+                #                 if department_code not in department_student_counts:
+                #                     department_student_counts[department_code] = 1
+                #                 else:
+                #                     department_student_counts[department_code] += 1
 
-            seatingDetails.append(detail)
-            print(seatingDetails , "seatinggggggggggggggggggggggggggggggggggggg")
-
+            # total_departments = len(department_student_counts) 
+            # total_student_count = sum(department_student_counts.values()) 
            
+
+            # detail = {
+
+            #     'hall_name': seating.hall_name,
+            #     'teacher': seating.teacher.name,
+            #     'term_data': term_data,
+            #     'total_departments': total_departments,
+            #      'total_students': total_student_count,
+            #     'department_students' : seating.department_students,
+                #  'department_code'     : department_code
+            #     'department_details': [
+            #     {'department_code': dept_code, 'student_count': count}
+            #     for dept_code, count in department_student_counts.items()
+            # ]
+            # }
+
+            # print(detail , "detaillllllllllll")
+
+            # seatingDetails.append(detail)
+            
 
 
         return JsonResponse(seatingDetails, safe=False)
