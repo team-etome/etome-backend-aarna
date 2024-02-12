@@ -29,8 +29,8 @@ class Timetable(APIView):
         for questionpaper in questionpapers:
             TimeTable.objects.create(
                 exam_name=questionpaper.exam_name,
-                department=questionpaper.department,
-                subject=questionpaper.subject,
+                department=questionpaper.department.department,
+                subject=questionpaper.subject.subject,
                 exam_date=questionpaper.exam_date,
                 exam_time=questionpaper.total_time,
             )
@@ -96,6 +96,7 @@ class EvaluationAssign(APIView):
 
 
 class HallTicket(APIView):
+
     def get(self, request, *args, **kwargs):
         data = request.data
         roll_number = data.get('roll_no') 
@@ -108,13 +109,16 @@ class HallTicket(APIView):
 
          
             response_data = {
-                'student': student_serializer.data,
-                'timetable': timetable_serializer.data
+                'student'         : student_serializer.data,
+                'department_name' : student.department.department,
+                'image_url'       : student.image.url ,
+                'timetable'       : timetable_serializer.data
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
             return Response({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 
 class QuestionsView(APIView):
 
@@ -155,6 +159,69 @@ class QuestionsView(APIView):
 
         except Exception as e:
             return JsonResponse({"success": False, "message": str(e)}, status=500)
+        
+
+
+class InvgilatorLogin(APIView):
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        try:
+            teacher = Teacher.objects.get(email=email)
+        except Teacher.DoesNotExist:
+            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+
+        if teacher is not None and check_password(password, teacher.password):
+            teacher_token = get_token(teacher, user_type='teacher')  # Assuming get_token is defined elsewhere
+
+            seating_arrangement_details = []
+            try:
+                seating_arrangements = SeatingArrangement.objects.filter(teacher=teacher)
+                
+                for seating in seating_arrangements:
+                    seating_arrangement_details.append({
+                        'hall_name': seating.hall_name,
+                        'department_students': seating.department_students, 
+                    })
+
+                department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]  
+                department_ids = [item for sublist in department_ids for item in sublist]  
+
+                question_papers = QuestionPaper.objects.filter(department__id__in=department_ids)
+
+                question_paper_details = []
+                for qpaper in question_papers:
+                    questions = Questions.objects.filter(questionpaper=qpaper)
+                    question_images = QuestionImage.objects.filter(question__in=questions)
+
+                    images = [qimage.image.url for qimage in question_images]
+                    question_paper_details.append({
+                        'question_paper_id': qpaper.id,
+                        'exam_name': qpaper.exam_name,
+                        'department': qpaper.department.department, 
+                        'images': images,
+                    })
+
+                response_data = {
+                    'message': 'Login successful',
+                    'token': teacher_token,
+                    'question_papers': question_paper_details,
+                    'seating_arrangements': seating_arrangement_details,  
+                }
+
+                return JsonResponse(response_data, status=200)
+
+            except SeatingArrangement.DoesNotExist:
+                return JsonResponse({'message': 'Login successful', 'token': teacher_token, 'error': 'No seating arrangement found for this teacher.'}, status=200)
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+        
+
+
+
+
 
 
         
