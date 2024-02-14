@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
 from aarna.models import *
@@ -21,28 +20,31 @@ class AddStudent(APIView):
   def post(self, request):
     mobile_number = request.data.get('number')
     roll_no = request.data.get('roll_no')
-    try:
+    email=request.data.get('email')
   
-        if Student.objects.filter(number=mobile_number).exists():
-            return JsonResponse({'message': 'A student with the same mobile number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if Student.objects.filter(roll_no=roll_no).exists():
-            return JsonResponse({'message': 'A student with the same register number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if Student.objects.filter(number=mobile_number).exists():
+        return JsonResponse({'message': 'A student with the same mobile number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if Student.objects.filter(roll_no=roll_no).exists():
+        return JsonResponse({'message': 'A student with the same register number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if Student.objects.filter(email=email).exists():
+        return JsonResponse({'message':'a student with same email already exists'},status=status.HTTP_400_BAD_REQUEST)
+
+    student_serializer = StudentSerializer(data=request.data)
+    if student_serializer.is_valid():
+        student_serializer.save()
+        return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+    else:
+        return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         student_serializer = StudentSerializer(data=request.data)
-        if student_serializer.is_valid():
-            student_serializer.save()
-            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+   
 class StudentExaminationLogin(APIView):
     def post(self, request, *args, **kwargs):
         roll_no = request.data.get('roll_no')
         password = request.data.get('password')
 
+       
         try:
             user = Student.objects.get(roll_no=roll_no)
            
@@ -51,6 +53,7 @@ class StudentExaminationLogin(APIView):
             if user is not None and check_password(password, user.password):
                 current_date = datetime.now().date()
                 department_id = user.department_id
+                
                 
 
                 try:
@@ -77,7 +80,6 @@ class StudentExaminationLogin(APIView):
 
                     }
 
-                    print(question_paper_details,'qqqqqqqqqqqqqqqqqqqqqqqqq')
 
 
                    
@@ -126,13 +128,17 @@ class Answers(APIView):
         
     
     def get(self, request, *args, **kwargs):
-        try:
-            student_id = request.GET.get('studentId')
-            question_code = request.GET.get('question')
-            
-            # if not student_id and not question_code:
-            answers = Answer.objects.all()
-            
+        student_id = request.GET.get('studentId')
+        question_code = request.GET.get('question')
+
+        if not student_id:
+            return JsonResponse({'error': 'Student ID is required'}, status=400)
+        
+        # if not student_id and not question_code:
+        answers = Answer.objects.all()
+        
+ 
+
             answerdetails = [{
 
                 'answer_id' : answer.id,
@@ -144,14 +150,9 @@ class Answers(APIView):
                 'answerData': answer.answer_data,
                 
             } for answer in answers]
-
-            
-            return JsonResponse({'data': answerdetails})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # if not student_id:
-        #     return JsonResponse({'error': 'Student ID is required'}, status=400)
-            
+        
+        return JsonResponse({'data': answerdetails})
+        
         # if not question_code:
         #     answers = Answer.objects.filter(studentId=student_id)
         #     answerdetails = [{
@@ -175,24 +176,18 @@ class Evaluations(APIView):
 
     def post(self ,request):
         try:
-       
-            data = request.data
+          data = request.data
+          evaluation_serializer = EvaluationSerializer(data = data)
+              if evaluation_serializer.is_valid():
+                  evaluation_serializer.save()
 
-
-            evaluation_serializer = EvaluationSerializer(data = data)
-
-        
-
-            if evaluation_serializer.is_valid():
-                evaluation_serializer.save()
-            
-                return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-            else:
-                return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                  return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+              else:
+                  return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    
+
+   
     def get(self , request):
         try:
 
