@@ -1,5 +1,4 @@
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
 from flutter.models import *
@@ -24,21 +23,30 @@ from django.core.files.base import ContentFile
 
 class Timetable(APIView):
 
-    def get(self , request):
-        questionpapers = QuestionPaper.objects.all().order_by('exam_date')
-        for questionpaper in questionpapers:
-            TimeTable.objects.create(
-                exam_name=questionpaper.exam_name,
-                department=questionpaper.department.department,
-                subject=questionpaper.subject.subject,
-                exam_date=questionpaper.exam_date,
-                exam_time=questionpaper.total_time,
-            )
+    def get(self, request):
+        try:
+            questionpapers = QuestionPaper.objects.all().order_by('exam_date')
+            for questionpaper in questionpapers:
+                try:
+                    TimeTable.objects.create(
+                        exam_name=questionpaper.exam_name,
+                        department=questionpaper.department.department,
+                        subject=questionpaper.subject.subject,
+                        exam_date=questionpaper.exam_date,
+                        exam_time=questionpaper.total_time,
+                    )
+                except Exception as e:
+                    # print(f"Error creating timetable entry: {e}")
+                    return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse("Timetable entries created successfully", status=status.HTTP_200_OK)
+        except Exception as e:
+            # Handle broader exceptions or log them
+            return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class EvaluationAssign(APIView):
 
  
-    def distribute_papers_to_teachers(teachers, answer_papers):
+    def distribute_papers_to_teachers(self,teachers, answer_papers):
         num_teachers = len(teachers)
         assigned_papers = {teacher.id: [] for teacher in teachers}
 
@@ -69,14 +77,14 @@ class EvaluationAssign(APIView):
                 questions = Questions.objects.filter(questionpaper__subject=subject)
                 answers = Answer.objects.filter(student=student, question__in=questions)
                 answer_data = [answer.answer_data for answer in answers]
-                answer_papers[student.roll_number] = answer_data
+                answer_papers[student.roll_no] = answer_data
 
             teachers = Teacher.objects.filter(id__in=data.get('teacher', []))
 
            
             distributed_papers = self.distribute_papers_to_teachers(teachers, answer_papers)
 
-           
+            
             for teacher_id, papers in distributed_papers.items():
                 AssignEvaluation.objects.update_or_create(
                     department=department,
@@ -85,14 +93,17 @@ class EvaluationAssign(APIView):
                     teacher_id=teacher_id,
                     defaults={'students': json.dumps(papers)}
                 )
+                return JsonResponse({'message': 'AssignEvaluation objects updated or created successfully'})
 
-            return Response("Evaluation assignments updated successfully.")
+            print(AssignEvaluation,"lllllllllllllllllllllllllllllllllllllll")
+
+            return JsonResponse("Evaluation assignments updated successfully.")
 
         except Department.DoesNotExist:
-            return Response("Department not found", status=404)
+            return JsonResponse("Department not found", status=404)
         except Subject.DoesNotExist:
-            return Response("Subject not found", status=404)
-    
+            return JsonResponse("Subject not found", status=404)
+        
 
 
 class HallTicket(APIView):
@@ -115,9 +126,9 @@ class HallTicket(APIView):
                 'timetable'       : timetable_serializer.data
             }
 
-            return Response(response_data, status=status.HTTP_200_OK)
+            return JsonResponse(response_data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
-            return Response({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
 class QuestionsView(APIView):
@@ -146,12 +157,14 @@ class QuestionsView(APIView):
             ext = format.split('/')[-1]
             question_img = ContentFile(base64.b64decode(imgstr), name='question.' + ext)
             QuestionImage.objects.create(question=question, image=question_img)
-
-            # Handling answer image
-            format, imgstr = answer_image_data.split(';base64,')
-            answer_img = ContentFile(base64.b64decode(imgstr), name='answer.' + ext)
-            AnswerImage.objects.create(question=question, image=answer_img)
-
+            try:
+                # Handling answer image
+                format, imgstr = answer_image_data.split(';base64,')
+                answer_img = ContentFile(base64.b64decode(imgstr), name='answer.' + ext)
+                AnswerImage.objects.create(question=question, image=answer_img)
+            except Exception as e:
+                question.delete()  # Rollback if answer image creation fails
+                return JsonResponse({"success": False, "message": f"Error saving answer image: {e}"}, status=500)
             return JsonResponse({"success": True, "message": "Question and answer images successfully saved."}, status=200)
 
         except QuestionPaper.DoesNotExist:
@@ -171,10 +184,10 @@ class InvgilatorLogin(APIView):
         try:
             teacher = Teacher.objects.get(email=email)
         except Teacher.DoesNotExist:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+            return JsonResponse({'error': 'Invalid email or password'}, status=401)
 
         if teacher is not None and check_password(password, teacher.password):
-            teacher_token = get_token(teacher, user_type='teacher')  # Assuming get_token is defined elsewhere
+            teacher_token = get_token(teacher, user_type='teacher') 
 
             seating_arrangement_details = []
             try:

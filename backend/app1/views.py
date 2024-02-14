@@ -1,5 +1,4 @@
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import *
 from .serializers import * 
@@ -26,10 +25,9 @@ class GodLoginView(APIView):
         try:
             user = God.objects.get(email = email)
         except God.DoesNotExist:
-            user = None
+            return JsonResponse({'error': 'No god found with this email'}, status=404)
 
-        if user is not None and check_password(password , user.password):
-            login(request , user)
+        if check_password(password, user.password):            
 
             admin_token = get_token(user , user_type='god')
 
@@ -70,9 +68,9 @@ class AddAdmin(APIView):
         admin_serializer = AdminSerializer(data=data)
         if admin_serializer.is_valid():
             admin_serializer.save()
-            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
-            return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 #Add Department    
@@ -84,18 +82,17 @@ class AddDepartment(APIView):
         code = data.get('department_code')
 
         if Department.objects.filter(department=name).exists():
-            print("enterrrrrrr")
-            return Response({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
         
         if Department.objects.filter(department_code = code).exists():
-            return Response({'error': 'A department with this code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'error': 'A department with this code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
         department_Serializer = DepartmentSerializer(data=data)
         if department_Serializer.is_valid():
             department_Serializer.save()
-            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
-            return Response(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
 
@@ -123,7 +120,7 @@ class AddDepartment(APIView):
         try:
             department = Department.objects.get(id=id)
         except Department.DoesNotExist:
-            return Response({"message": "Department not found"}, status=404)
+            return JsonResponse({"message": "Department not found"}, status=404)
 
         if 'department' in data:
             department.department = data['department']
@@ -134,16 +131,16 @@ class AddDepartment(APIView):
 
         department.save()
 
-        return Response({"message": "Department updated successfully"}, status=200)
+        return JsonResponse({"message": "Department updated successfully"}, status=200)
     
 
     def delete(self, request, pk):
         try:
             department = Department.objects.get(id=pk)
             department.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return JsonResponse(status=status.HTTP_204_NO_CONTENT)
         except Department.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse(status=status.HTTP_404_NOT_FOUND)
 
 
 
@@ -152,15 +149,24 @@ class AddDepartment(APIView):
 class AddSubject(APIView):
     def post(self,request):
         data = request.data
+        name = data.get('subject')
+        code = data.get('subject_code')
+
+        if Subject.objects.filter(subject=name).exists():
+            return JsonResponse({'error':'a subject with same name already exists'},status=status.HTTP_400_BAD_REQUEST)
+        if Subject.objects.filter(subject_code=code).exists():
+            return JsonResponse({'error':'a subject with the code already exists'},status=status.HTTP_400_BAD_REQUEST)
+        
+        
         subject_Serializer = SubjectSerializer(data = data)
 
         if subject_Serializer.is_valid():
             subject_Serializer.save()
 
-            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
         else:
-            return Response(subject_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(subject_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
 
     def get(self,request):
@@ -197,7 +203,7 @@ class AddSubject(APIView):
             subject = Subject.objects.get(id = id)
 
         except Subject.DoesNotExist:
-            return Response({"messaage" : "Subject not found"},status=404)
+            return JsonResponse({"messaage" : "Subject not found"},status=404)
         
 
         if 'subject' in data:
@@ -212,16 +218,16 @@ class AddSubject(APIView):
 
         subject.save()
 
-        return Response({"message": "Subject updated successfully"}, status=200)
+        return JsonResponse({"message": "Subject updated successfully"}, status=200)
 
 
     def delete(self, request, pk):
         try:
             subject = Subject.objects.get(id=pk)
             subject.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return JsonResponse(status=status.HTTP_204_NO_CONTENT)
         except Department.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse(status=status.HTTP_404_NOT_FOUND)
 
 
 class SendInvite(APIView):
@@ -231,14 +237,14 @@ class SendInvite(APIView):
         email_addresses = request.data.get('emails', [])
 
         if not email_addresses:
-            return Response({"error": "No email addresses provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"error": "No email addresses provided."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             for email in email_addresses:
                 self.send_mail(email)
-            return Response({"message": "Emails sent successfully."}, status=status.HTTP_200_OK)
+            return JsonResponse({"message": "Emails sent successfully."}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def send_mail(self, recipient_email):
@@ -321,7 +327,7 @@ class SendInvite(APIView):
             server.sendmail(sender_mail, recipient_email, msg.as_string())
             server.quit()
         except Exception as e:
-            print("Error sending email:", str(e))
+            return JsonResponse(f"Error sending email: {str(e)}",status=status.HTTP_400_BAD_REQUEST)
 
     
 
@@ -353,9 +359,9 @@ class AddTeacher(APIView):
             teacher = teacher_serializer.save()
             image_url = teacher.image.url
 
-            return Response({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
         else:
-            return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
 

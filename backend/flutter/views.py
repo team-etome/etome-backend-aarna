@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
 from aarna.models import *
@@ -21,25 +20,32 @@ class AddStudent(APIView):
   def post(self, request):
     mobile_number = request.data.get('number')
     roll_no = request.data.get('roll_no')
+    email=request.data.get('email')
   
     if Student.objects.filter(number=mobile_number).exists():
-        return Response({'message': 'A student with the same mobile number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'message': 'A student with the same mobile number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
     
     if Student.objects.filter(roll_no=roll_no).exists():
-        return Response({'message': 'A student with the same register number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'message': 'A student with the same register number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if Student.objects.filter(email=email).exists():
+        return JsonResponse({'message':'a student with same email already exists'},status=status.HTTP_400_BAD_REQUEST)
 
     student_serializer = StudentSerializer(data=request.data)
     if student_serializer.is_valid():
         student_serializer.save()
-        return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
     else:
-        return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
 class StudentExaminationLogin(APIView):
     def post(self, request, *args, **kwargs):
         roll_no = request.data.get('roll_no')
         password = request.data.get('password')
+
+        
+
+
 
         try:
             user = Student.objects.get(roll_no=roll_no)
@@ -49,6 +55,7 @@ class StudentExaminationLogin(APIView):
             if user is not None and check_password(password, user.password):
                 current_date = datetime.now().date()
                 department_id = user.department_id
+                
                 
 
                 try:
@@ -75,7 +82,6 @@ class StudentExaminationLogin(APIView):
 
                     }
 
-                    print(question_paper_details,'qqqqqqqqqqqqqqqqqqqqqqqqq')
 
 
                    
@@ -122,12 +128,12 @@ class Answers(APIView):
     def get(self, request, *args, **kwargs):
         student_id = request.GET.get('studentId')
         question_code = request.GET.get('question')
-        print(student_id, 'student_id is hereeeee')
-        print(question_code, 'question_code is hereeeee')
+
+        if not student_id:
+            return JsonResponse({'error': 'Student ID is required'}, status=400)
         
         # if not student_id and not question_code:
         answers = Answer.objects.all()
-        print(answers,"answersssssss")
         
         answerdetails = [{
 
@@ -144,8 +150,7 @@ class Answers(APIView):
         
         return JsonResponse({'data': answerdetails})
         
-        # if not student_id:
-        #     return JsonResponse({'error': 'Student ID is required'}, status=400)
+        
             
         # if not question_code:
         #     answers = Answer.objects.filter(studentId=student_id)
@@ -172,11 +177,9 @@ class Evaluations(APIView):
        
         data = request.data
 
-        print(data,"aaaaaaaaaa")
 
         evaluation_serializer = EvaluationSerializer(data = data)
 
-        print(evaluation_serializer,"aaaaaaaaaaaaaaaaaa")
       
 
         if evaluation_serializer.is_valid():
@@ -184,7 +187,6 @@ class Evaluations(APIView):
         
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
-            print(evaluation_serializer.errors,"errorrrrssssssssssssss")
             return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     

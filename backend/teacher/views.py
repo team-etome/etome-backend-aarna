@@ -1,5 +1,4 @@
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from app1.models import *
 from aarna.models import *
@@ -26,38 +25,48 @@ import ast
 class TeacherDetails(APIView):
 
     def get(self, request):
-        teachers = Teacher.objects.all().order_by('id')
-        
-        teacherDetails = []
+        try:
+            teachers = Teacher.objects.all().order_by('id')
+            teacherDetails = []
 
-        for teacher in teachers:
-            departments = teacher.departments.all()
-            department_names = [department.department for department in departments]
+            for teacher in teachers:
+                try:
+                    departments = teacher.departments.all()
+                    department_names = [department.department for department in departments]
 
-            if teacher.image:
-                image_url = request.build_absolute_uri(settings.MEDIA_URL + str(teacher.image))
-            else:
-                image_url = None
+                    if teacher.image:
+                        image_url = request.build_absolute_uri(settings.MEDIA_URL + str(teacher.image))
+                    else:
+                        image_url = None
 
-            teacherDetails.append({
-                'name': teacher.name,
-                'departmentNames': department_names,  
-                'contact': teacher.phoneNumber,
-                'id'      : teacher.id,
-                'image'   : image_url
-            })
+                    teacherDetails.append({
+                        'name': teacher.name,
+                        'departmentNames': department_names,  
+                        'contact': teacher.phoneNumber,
+                        'id': teacher.id,
+                        'image': image_url
+                    })
+                except Exception as e:
+                    return JsonResponse("Error processing details for teacher with ID ")
 
-        return JsonResponse(teacherDetails, safe=False)
-    
+            return JsonResponse(teacherDetails, safe=False)
+
+        except Exception as e:
+            return JsonResponse({'error': f"An error occurred: {e}"}, status=500)
+
 
     def delete(self , request , pk):
         try:
             teacher = Teacher.objects.get(id = pk)
             teacher.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Department.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
+            return JsonResponse({'message': 'Teacher deleted successfully'},status=status.HTTP_204_NO_CONTENT)
+        # except Department.DoesNotExist:
+        #     return JsonResponse(status=status.HTTP_404_NOT_FOUND)
+        except Teacher.DoesNotExist:
+            return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class AssignBlueprint(APIView):
@@ -69,40 +78,44 @@ class AssignBlueprint(APIView):
         if questionpaper_serializer.is_valid():
             questionpaper_serializer.save(status='assigned')
 
-            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
         else:
-            print(questionpaper_serializer.errors ,"aaaaaaaaaaaa")
-            return Response(questionpaper_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(questionpaper_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
     def get(self , request):
+        try:
+            blueprints = QuestionPaper.objects.all().order_by('id')
+            blueprintDetails = []
 
-        blueprints = QuestionPaper.objects.all().order_by('id')
-        blueprintDetails = []
+            for blueprint in blueprints:
+                try:
+                    department_name = blueprint.department.department
+                    if blueprint.teacher is not None:
+                        vetTeacher = blueprint.teacher.name
+                    else:
+                        vetTeacher = "No Teacher Assigned"
 
-        for blueprint in blueprints:
-            department_name = blueprint.department.department
-            if blueprint.teacher is not None:
-                vetTeacher = blueprint.teacher.name
-            else:
-                vetTeacher = "No Teacher Assigned"
+                    blueprintDetails.append({
 
-            blueprintDetails.append({
+                        'id'             :  blueprint.id,
+                        'ExamName'       :  blueprint.exam_name,
+                        'department'     :  department_name,
+                        'exam_date'      :  blueprint.exam_date,
+                        'semester'       :  blueprint.semester,
+                        'term'           :  blueprint.term,
+                        'status'         :  blueprint.status,
+                        'vetTeacher'     :  vetTeacher,
+                        'time'           :  blueprint.total_time
+                    })
 
-                'id'             :  blueprint.id,
-                'ExamName'       :  blueprint.exam_name,
-                'department'     :  department_name,
-                'exam_date'      :  blueprint.exam_date,
-                'semester'       :  blueprint.semester,
-                'term'           :  blueprint.term,
-                'status'         :  blueprint.status,
-                'vetTeacher'     :  vetTeacher,
-                'time'           :  blueprint.total_time
-            })
-
-        return JsonResponse(blueprintDetails, safe=False)
-    
+                    return JsonResponse(blueprintDetails, safe=False)
+                except Exception as e:
+                  return JsonResponse("Error processing details for teacher with ID ")
+            return JsonResponse(blueprintDetails, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': f"An error occurred: {e}"}, status=500)        
 
 
 
@@ -115,7 +128,8 @@ class BlueprintDetailView(APIView):
             return JsonResponse(serializer.data, status=status.HTTP_200_OK)
         except QuestionPaper.DoesNotExist:
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+        except Exception as e:
+            return JsonResponse({'error': f"An error occurred: {e}"}, status=500)        
 
 class TeacherLoginView(APIView):
 
@@ -133,14 +147,11 @@ class TeacherLoginView(APIView):
             teacher_token = get_token(teacher, user_type='teacher')
             
             try:
-                qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
-
-
-                response_data = {
-                    'message': 'Login successful',
-                    'token': teacher_token,
-                    'qpaper_details': {
-                        'id'      : qpaper_assigned.id,
+                qpapers_assigned = QuestionPaper.objects.filter(teacher_id=teacher_id)
+                qpapers_details = []
+                for qpaper_assigned in qpapers_assigned:
+                    qpaper_details = {
+                        'id': qpaper_assigned.id,
                         'examName': qpaper_assigned.exam_name,
                         'department': qpaper_assigned.department.department,
                         'subject': qpaper_assigned.subject.subject,
@@ -148,11 +159,19 @@ class TeacherLoginView(APIView):
                         'total_time': qpaper_assigned.total_time,
                         'exam_date': qpaper_assigned.exam_date,
                         'vetTeacher1': qpaper_assigned.teacher.name,
-                        'teacherid'  : qpaper_assigned.teacher.id,
+                        'teacherid': qpaper_assigned.teacher.id,
                         'term': qpaper_assigned.term,
                         'status': qpaper_assigned.status,
                     }
+                    qpapers_details.append(qpaper_details)
+
+                response_data = {
+                    'message': 'Login successful',
+                    'token': teacher_token,
+                    'qpaper_details': qpapers_details
                 }
+
+                
 
                 
 
@@ -179,9 +198,9 @@ class QpaperModule(APIView):
             question_paper_instance.status = 'submitted'
             question_paper_instance.save()
 
-            return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
-            return Response(blueprintSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(blueprintSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
     def get(self, request, qpaperid,*args, **kwargs ):
@@ -194,12 +213,13 @@ class QpaperModule(APIView):
             return JsonResponse(data, status=status.HTTP_200_OK )
         except Blueprint.DoesNotExist:
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        except Exception as e:
+            return JsonResponse({'error': f"An error occurred: {e}"}, status=500)
     def put(self, request, qpaperid):
         try:
             question_paper = QuestionPaper.objects.get(pk=qpaperid)
         except QuestionPaper.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse(status=status.HTTP_404_NOT_FOUND)
         data = request.data
         status_action = data.get('status_action', None)
        
@@ -214,16 +234,16 @@ class QpaperModule(APIView):
                 exam_date=question_paper.exam_date,
                 exam_time=question_paper.total_time
             )
-            return Response(status=status.HTTP_200_OK)
+            return JsonResponse(status=status.HTTP_200_OK)
         elif status_action == "decline":
             question_paper.status = "declined"
             question_paper.save()
 
             Blueprint.objects.filter(question_paper=qpaperid).delete()
 
-            return Response(status=status.HTTP_200_OK)
+            return JsonResponse(status=status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
     
         
 
@@ -325,7 +345,7 @@ class SeatingArrangementView(APIView):
         try:
          students = Student.objects.filter(department__id__in=department_ids , selected=False)
         except Student.DoesNotExist:
-            print("Student not found")
+            return JsonResponse("Student not found")
        
 
         department_students = {}
@@ -361,31 +381,34 @@ class SeatingArrangementView(APIView):
             seating_arrangement,vacant_seats = self.sequential_distribution(  cols,rows, students_per_bench,department_ids)
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
         else:
-            return Response({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
 
-      
-        SeatingArrangement.objects.create(
-            pattern=pattern,
-            hall_name=hall_name,
-            teacher_id=teacher_id,
-            exam_name=exam_name,
-            exam_date=exam_date_obj,
-            exam_time=exam_time,
-            seating_layout=seating_layout,
-            department_students=columned_seating_arrangement_json,
-            department_ids=json.dumps(department_ids)
-        )
+        try:      
+            SeatingArrangement.objects.create(
+                pattern=pattern,
+                hall_name=hall_name,
+                teacher_id=teacher_id,
+                exam_name=exam_name,
+                exam_date=exam_date_obj,
+                exam_time=exam_time,
+                seating_layout=seating_layout,
+                department_students=columned_seating_arrangement_json,
+                department_ids=json.dumps(department_ids)
+            )
 
-        selected_student_ids = [student.id for student in students]
-        Student.objects.filter(id__in=selected_student_ids).update(selected=True)
+            selected_student_ids = [student.id for student in students]
+            Student.objects.filter(id__in=selected_student_ids).update(selected=True)
 
 
-        
-        return Response({'seating_arrangement': seating_arrangement}, status=status.HTTP_200_OK)
-    
+            
+            return JsonResponse({'seating_arrangement': seating_arrangement}, status=status.HTTP_200_OK)
+        except :
+            return JsonResponse(seating_arrangement.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
     def get(self, request):
 
@@ -400,75 +423,77 @@ class SeatingArrangementView(APIView):
         total_student_count = 0
         total_department_count = 0
 
+        try:
+            for seating in seating_arrangements:
+                seatingDetails.append({
+                'hall_name' : seating.hall_name , 
+                'department_students' : seating.department_students,
+                'term_data'           : term_data,
+                'teacher'             : seating.teacher.name
 
-        for seating in seating_arrangements:
-            seatingDetails.append({
-               'hall_name' : seating.hall_name , 
-               'department_students' : seating.department_students,
-               'term_data'           : term_data,
-               'teacher'             : seating.teacher.name
+                })
+            
+            #     student_count = sum(len(student_list) for student_list in department_students.values())
+            #     total_student_count += student_count
+            #     department_count = len(department_students)
+            #     total_department_count += department_count
+            #     department_id = list(department_students.keys())[0]
 
-            })
-           
-        #     student_count = sum(len(student_list) for student_list in department_students.values())
-        #     total_student_count += student_count
-        #     department_count = len(department_students)
-        #     total_department_count += department_count
-        #     department_id = list(department_students.keys())[0]
+            #     if department_students:
+            #         department_id = list(department_students.keys())[0]
+            #         department = Department.objects.get(id=department_id)  
+            #         department_code = department.department_code
+            #     else:
+            #         department_code = 'N/A'
 
-        #     if department_students:
-        #         department_id = list(department_students.keys())[0]
-        #         department = Department.objects.get(id=department_id)  
-        #         department_code = department.department_code
-        #     else:
-        #         department_code = 'N/A'
+            #     department_student_counts = {}  
 
-        #     department_student_counts = {}  
+            #     for seating in seating_arrangements:
+                
+            #         try:
+            #             department_students = json.loads(seating.department_students)
+            #         except json.JSONDecodeError:
+            #             department_students = []  
+            #         department_codes = set()
+                    # for row in department_students:
+                    #     for group in row:
+                    #         for seat in group:
+                    #             if seat != "Vacant-0":
+                    #                 department_code, _ = seat.split("-")[0]
+                    #                 department_codes.add(department_code)
+                    #                 if department_code not in department_student_counts:
+                    #                     department_student_counts[department_code] = 1
+                    #                 else:
+                    #                     department_student_counts[department_code] += 1
 
-        #     for seating in seating_arrangements:
-               
-        #         try:
-        #             department_students = json.loads(seating.department_students)
-        #         except json.JSONDecodeError:
-        #             department_students = []  
-        #         department_codes = set()
-                # for row in department_students:
-                #     for group in row:
-                #         for seat in group:
-                #             if seat != "Vacant-0":
-                #                 department_code, _ = seat.split("-")[0]
-                #                 department_codes.add(department_code)
-                #                 if department_code not in department_student_counts:
-                #                     department_student_counts[department_code] = 1
-                #                 else:
-                #                     department_student_counts[department_code] += 1
-
-            # total_departments = len(department_student_counts) 
-            # total_student_count = sum(department_student_counts.values()) 
-           
-
-            # detail = {
-
-            #     'hall_name': seating.hall_name,
-            #     'teacher': seating.teacher.name,
-            #     'term_data': term_data,
-            #     'total_departments': total_departments,
-            #      'total_students': total_student_count,
-            #     'department_students' : seating.department_students,
-                #  'department_code'     : department_code
-            #     'department_details': [
-            #     {'department_code': dept_code, 'student_count': count}
-            #     for dept_code, count in department_student_counts.items()
-            # ]
-            # }
-
-            # print(detail , "detaillllllllllll")
-
-            # seatingDetails.append(detail)
+                # total_departments = len(department_student_counts) 
+                # total_student_count = sum(department_student_counts.values()) 
             
 
+                # detail = {
 
-        return JsonResponse(seatingDetails, safe=False)
+                #     'hall_name': seating.hall_name,
+                #     'teacher': seating.teacher.name,
+                #     'term_data': term_data,
+                #     'total_departments': total_departments,
+                #      'total_students': total_student_count,
+                #     'department_students' : seating.department_students,
+                    #  'department_code'     : department_code
+                #     'department_details': [
+                #     {'department_code': dept_code, 'student_count': count}
+                #     for dept_code, count in department_student_counts.items()
+                # ]
+                # }
+
+                # print(detail , "detaillllllllllll")
+
+                # seatingDetails.append(detail)
+                
+
+
+            return JsonResponse(seatingDetails, safe=False)
+        except Exception as e:
+            return JsonResponse("Error processing details for seating arrangement ")
         
 
         
