@@ -6,13 +6,9 @@ from .models import *
 from app1.serializers import * 
 from aarna.serializers import *
 from flutter.serializers import * 
-from rest_framework.exceptions import ValidationError
 from app1.token import get_token
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
-from django.contrib.auth import login
-from django.shortcuts import get_object_or_404
-from django.conf import settings
 import json
 import random
 import string
@@ -35,7 +31,6 @@ class Timetable(APIView):
                         exam_time=questionpaper.total_time,
                     )
                 except Exception as e:
-                    # print(f"Error creating timetable entry: {e}")
                     return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return JsonResponse("Timetable entries created successfully", status=status.HTTP_200_OK)
         except Exception as e:
@@ -95,7 +90,6 @@ class EvaluationAssign(APIView):
                 )
                 return JsonResponse({'message': 'AssignEvaluation objects updated or created successfully'})
 
-            print(AssignEvaluation,"lllllllllllllllllllllllllllllllllllllll")
 
             return JsonResponse("Evaluation assignments updated successfully.")
 

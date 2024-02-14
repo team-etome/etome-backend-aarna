@@ -2,11 +2,9 @@ from rest_framework import status
 from rest_framework.views import APIView
 from .models import *
 from .serializers import * 
-from rest_framework.exceptions import ValidationError,ParseError
 from . token import get_token
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
-from django.contrib.auth import login,authenticate
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -202,8 +200,8 @@ class AddSubject(APIView):
         if Subject.objects.filter(subject_code=code).exists():
             return JsonResponse({'error':'a subject with the code already exists'},status=status.HTTP_400_BAD_REQUEST)       
         subject_Serializer = SubjectSerializer(data = data)
-            if subject_Serializer.is_valid():
-                subject_Serializer.save()
+        if subject_Serializer.is_valid():
+            subject_Serializer.save()
 
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
@@ -240,27 +238,27 @@ class AddSubject(APIView):
 
 
     def put(self , request):
+
+        data = request.data
+        id   = data.get('id')
+
         try:
+            subject = Subject.objects.get(id = id)
 
-            data = request.data
-            id   = data.get('id')
-
-            try:
-                subject = Subject.objects.get(id = id)
         except Subject.DoesNotExist:
             return JsonResponse({"messaage" : "Subject not found"},status=404)
         
-            if 'subject' in data:
-                subject.subject = data['subject']
-            if 'subject_code' in data:
-                subject.subject_code = data['subject_code']
-            if 'programme' in data:
-                subject.programme = data['programme']
+        if 'subject' in data:
+            subject.subject = data['subject']
+        if 'subject_code' in data:
+            subject.subject_code = data['subject_code']
+        if 'programme' in data:
+            subject.programme = data['programme']
 
-            if 'semester' in data:
-                subject.semester = data['semester']
+        if 'semester' in data:
+            subject.semester = data['semester']
 
-            subject.save()
+        subject.save()
         return JsonResponse({"message": "Subject updated successfully"}, status=200)
 
     def delete(self, request, pk):
@@ -277,13 +275,10 @@ class AddSubject(APIView):
 class SendInvite(APIView):
 
     def post(self,request):
-        try:
-        
-            email_addresses = request.data.get('emails', [])
 
+        email_addresses = request.data.get('emails', [])
         if not email_addresses:
             return JsonResponse({"error": "No email addresses provided."}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             for email in email_addresses:
                 self.send_mail(email)
@@ -383,7 +378,6 @@ class SendInvite(APIView):
 #Add Teacher   
 class AddTeacher(APIView):
     def post(self, request):
-        try:
             data = request.data.copy()
             department_ids = data.get('department_id')
             subject_ids = data.get('subject_id')
@@ -420,14 +414,14 @@ class AddTeacher(APIView):
                 subject_ids = [int(subject_ids)]
             data.setlist('subjects', subject_ids)
 
-        teacher_serializer = TeacherSerializer(data=data)
-        if teacher_serializer.is_valid():
-            teacher = teacher_serializer.save()
-            image_url = teacher.image.url
+            teacher_serializer = TeacherSerializer(data=data)
+            if teacher_serializer.is_valid():
+                teacher = teacher_serializer.save()
+                image_url = teacher.image.url
 
-            return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return JsonResponse(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
+            else:
+                return JsonResponse(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
 
