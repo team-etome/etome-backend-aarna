@@ -22,7 +22,6 @@ from django.core.files.base import ContentFile
 
 
 class Timetable(APIView):
-
     def get(self, request):
         try:
             questionpapers = QuestionPaper.objects.all().order_by('exam_date')
@@ -42,6 +41,7 @@ class Timetable(APIView):
         except Exception as e:
             # Handle broader exceptions or log them
             return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class EvaluationAssign(APIView):
 
@@ -103,8 +103,6 @@ class EvaluationAssign(APIView):
             return JsonResponse("Department not found", status=404)
         except Subject.DoesNotExist:
             return JsonResponse("Subject not found", status=404)
-        
-
 
 class HallTicket(APIView):
 
@@ -129,30 +127,32 @@ class HallTicket(APIView):
             return JsonResponse(response_data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
             return JsonResponse({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
-        
 
 class QuestionsView(APIView):
 
     def post(self, request, *args, **kwargs):
 
-        question_id = request.POST.get('question_id')
-        question_image_data = request.POST.get('questionImage')
-        answer_image_data = request.POST.get('answerImage')
-
         try:
+            question_id = request.POST.get('question_id')
+            question_image_data = request.POST.get('questionImage')
+            answer_image_data = request.POST.get('answerImage')
+
+            if not all([question_id, question_image_data, answer_image_data]):
+                # If any of the required parameters are missing
+                return JsonResponse({"success": False, "message": "Missing required parameters."}, status=400)
+
             question_paper = QuestionPaper.objects.get(pk=question_id)
 
             # Generate a random question code
             question_code = ''.join(random.choices(string.ascii_uppercase, k=3)) + ''.join(random.choices(string.digits, k=5))
 
-            print(question_code,"question codedeeeeeeeeeee")
-
             # Create a new Questions object
             question = Questions.objects.create(
-                questionpaper_id=question_id,  
+                questionpaper_id=question_id,
                 questioncode=question_code
             )
 
+            # Handling question image
             format, imgstr = question_image_data.split(';base64,')
             ext = format.split('/')[-1]
             question_img = ContentFile(base64.b64decode(imgstr), name='question.' + ext)
@@ -168,19 +168,16 @@ class QuestionsView(APIView):
             return JsonResponse({"success": True, "message": "Question and answer images successfully saved."}, status=200)
 
         except QuestionPaper.DoesNotExist:
-            return JsonResponse({"success": False, "message": "QuestionPaper not found."}, status=404)
+                return JsonResponse({"success": False, "message": "QuestionPaper not found."}, status=404)
 
         except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=500)
-        
-
+                return JsonResponse({"success": False, "message": str(e)}, status=500)
 
 class InvgilatorLogin(APIView):
 
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-
         try:
             teacher = Teacher.objects.get(email=email)
         except Teacher.DoesNotExist:
@@ -231,10 +228,6 @@ class InvgilatorLogin(APIView):
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
         
-
-
-
-
 
 
         

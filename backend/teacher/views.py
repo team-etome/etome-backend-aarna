@@ -23,7 +23,6 @@ import ast
 
 
 class TeacherDetails(APIView):
-
     def get(self, request):
         try:
             teachers = Teacher.objects.all().order_by('id')
@@ -55,13 +54,12 @@ class TeacherDetails(APIView):
             return JsonResponse({'error': f"An error occurred: {e}"}, status=500)
 
 
+
     def delete(self , request , pk):
         try:
-            teacher = Teacher.objects.get(id = pk)
+            teacher = Teacher.objects.get(id=pk)
             teacher.delete()
             return JsonResponse({'message': 'Teacher deleted successfully'},status=status.HTTP_204_NO_CONTENT)
-        # except Department.DoesNotExist:
-        #     return JsonResponse(status=status.HTTP_404_NOT_FOUND)
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -69,19 +67,20 @@ class TeacherDetails(APIView):
             return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 class AssignBlueprint(APIView):
 
     def post(self , request):
+        try:
 
-        data = request.data
-        questionpaper_serializer  = QuestionPaperSerializer(data = data)
-        if questionpaper_serializer.is_valid():
-            questionpaper_serializer.save(status='assigned')
-
+            data = request.data
+            questionpaper_serializer  = QuestionPaperSerializer(data = data)
+            if questionpaper_serializer.is_valid():
+                questionpaper_serializer.save(status='assigned')
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        
         else:
             return JsonResponse(questionpaper_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         
 
     def get(self , request):
@@ -90,6 +89,7 @@ class AssignBlueprint(APIView):
             blueprintDetails = []
 
             for blueprint in blueprints:
+
                 try:
                     department_name = blueprint.department.department
                     if blueprint.teacher is not None:
@@ -119,6 +119,7 @@ class AssignBlueprint(APIView):
 
 
 
+
 class BlueprintDetailView(APIView):
 
     def get(self, request, id):
@@ -131,17 +132,19 @@ class BlueprintDetailView(APIView):
         except Exception as e:
             return JsonResponse({'error': f"An error occurred: {e}"}, status=500)        
 
+
 class TeacherLoginView(APIView):
+
 
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
 
         try:
-            teacher = Teacher.objects.get(email=email)
-            teacher_id = teacher.id
+          teacher = Teacher.objects.get(email=email)
+          teacher_id = teacher.id
         except Teacher.DoesNotExist:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+                    return JsonResponse({'error': 'Invalid email or password'}, status=401)
 
         if teacher is not None and check_password(password, teacher.password):
             teacher_token = get_token(teacher, user_type='teacher')
@@ -170,12 +173,6 @@ class TeacherLoginView(APIView):
                     'token': teacher_token,
                     'qpaper_details': qpapers_details
                 }
-
-                
-
-                
-
-
                 return JsonResponse(response_data)
             except QuestionPaper.DoesNotExist:
                 return JsonResponse({'message': 'Login successful', 'token': teacher_token})
@@ -187,16 +184,17 @@ class TeacherLoginView(APIView):
 class QpaperModule(APIView):
 
     def post(self, request, *args, **kwargs):
-        data = request.data
-        blueprintSerializer = BlueprintSerializer(data = data)
+        try: 
+                data = request.data
+                blueprintSerializer = BlueprintSerializer(data = data)
 
-        if blueprintSerializer.is_valid():
-            
-            blueprint_instance = blueprintSerializer.save()
+                if blueprintSerializer.is_valid():
+                    
+                    blueprint_instance = blueprintSerializer.save()
 
-            question_paper_instance = blueprint_instance.question_paper
-            question_paper_instance.status = 'submitted'
-            question_paper_instance.save()
+                    question_paper_instance = blueprint_instance.question_paper
+                    question_paper_instance.status = 'submitted'
+                    question_paper_instance.save()
 
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         else:
@@ -215,6 +213,7 @@ class QpaperModule(APIView):
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return JsonResponse({'error': f"An error occurred: {e}"}, status=500)
+
     def put(self, request, qpaperid):
         try:
             question_paper = QuestionPaper.objects.get(pk=qpaperid)
@@ -240,17 +239,12 @@ class QpaperModule(APIView):
             question_paper.save()
 
             Blueprint.objects.filter(question_paper=qpaperid).delete()
-
             return JsonResponse(status=status.HTTP_200_OK)
         else:
             return JsonResponse({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
+
     
         
-
-
-# .values_list('id', flat=True)
-
-
 class SeatingArrangementView(APIView):
      
     def patterned_distribution(self,cols, rows, student_per_table, department_ids):
@@ -314,7 +308,6 @@ class SeatingArrangementView(APIView):
         seating_arrangement = []
         vacant_seats = 0
 
-        # Populate the seating arrangement
         for t in range(rows):
             table = []
             for s in range(student_per_table):
@@ -339,15 +332,12 @@ class SeatingArrangementView(APIView):
         pattern_type = data.get('seating_layout')
         pattern      = data.get('pattern')
         department_ids = [int(id) for id in data.get('departments', [])]
-        print(department_ids,"department idsssssss")
-
 
         try:
          students = Student.objects.filter(department__id__in=department_ids , selected=False)
         except Student.DoesNotExist:
             return JsonResponse("Student not found")
-       
-
+      
         department_students = {}
         for student in students:
             dept_id = student.department.id
@@ -382,10 +372,6 @@ class SeatingArrangementView(APIView):
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
         else:
             return JsonResponse({'error': 'Invalid pattern type provided.'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
         try:      
             SeatingArrangement.objects.create(
                 pattern=pattern,
@@ -408,18 +394,15 @@ class SeatingArrangementView(APIView):
         except :
             return JsonResponse(seating_arrangement.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
+          
+          
     def get(self, request):
-
+      
         seating_arrangements = SeatingArrangement.objects.all().order_by('id')
         exam_names = [seating.exam_name for seating in seating_arrangements]
-
         question_papers = QuestionPaper.objects.filter(exam_name__in=exam_names)
-        term_data = set(paper.term for paper in question_papers)
-        term_data = list(term_data)
+        term_data = [paper.term for paper in question_papers]
         seatingDetails = []
-
         total_student_count = 0
         total_department_count = 0
 
@@ -469,7 +452,6 @@ class SeatingArrangementView(APIView):
                 # total_departments = len(department_student_counts) 
                 # total_student_count = sum(department_student_counts.values()) 
             
-
                 # detail = {
 
                 #     'hall_name': seating.hall_name,
@@ -489,7 +471,38 @@ class SeatingArrangementView(APIView):
 
                 # seatingDetails.append(detail)
                 
+        for seating in seating_arrangements:
 
+           
+            # department_students = seating.department_students
+            # student_count = sum(len(student_list) for student_list in department_students.values())
+            # total_student_count += student_count
+            # department_count = len(department_students)
+            # total_department_count += department_count
+            # department_id = list(department_students.keys())[0]
+
+            # if department_students:
+            #     department_id = list(department_students.keys())[0]
+            #     department = Department.objects.get(id=department_id)  
+            #     department_code = department.department_code
+            # else:
+            #     department_code = 'N/A'
+
+            detail = {
+
+                'hall_name': seating.hall_name,
+                'teacher': seating.teacher.name,
+                'term_data': term_data,
+                # 'student_count': student_count,
+                # 'department_count': department_count,
+                # 'department_code': department_code,
+                'department_students' : seating.department_students
+            }
+
+            seatingDetails.append(detail)
+  
+
+           
 
             return JsonResponse(seatingDetails, safe=False)
         except Exception as e:

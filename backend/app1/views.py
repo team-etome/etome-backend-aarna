@@ -2,11 +2,11 @@ from rest_framework import status
 from rest_framework.views import APIView
 from .models import *
 from .serializers import * 
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError,ParseError
 from . token import get_token
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
-from django.contrib.auth import login
+from django.contrib.auth import login,authenticate
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -16,54 +16,86 @@ from email.mime.image import MIMEImage
 
 #Login of God(super user)
 class GodLoginView(APIView):
+    
 
     def post(self, request, *args, **kwargs):
-        email     =  request.data.get('email')
-        password  =  request.data.get('password')
-
-
         try:
-            user = God.objects.get(email = email)
-        except God.DoesNotExist:
-            return JsonResponse({'error': 'No god found with this email'}, status=404)
+            email     =  request.data.get('email')
+            password  =  request.data.get('password')
 
-        if check_password(password, user.password):            
+            if not email or not password:
+             return JsonResponse({'error': 'Email and password are required'}, status=400)
 
-            admin_token = get_token(user , user_type='god')
+            try:
+                user = God.objects.get(email = email)
+            except God.DoesNotExist:
+                return JsonResponse({'error': 'No user found with this email'}, status=404)
+            except Exception as e:
+             return JsonResponse({'error': 'An unexpected error occurred: ' + str(e)}, status=500)
 
 
-            return JsonResponse({'message': 'Login successful','token' : admin_token })
+            if check_password(password, user.password):
+
+
+                admin_token = get_token(user , user_type='god')
+                return JsonResponse({'message': 'Login successful','token' : admin_token })
+            
+            else:
+
+                return JsonResponse({'error': 'Invalid email or password'}, status=401)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        else:
-
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
-        
 
 
-#Login of Admin(college)
+
+
 class AdminLoginView(APIView):
-
     def post(self, request, *args, **kwargs):
         email = request.data.get('emailid')
         password = request.data.get('password')
+
+        if not email or not password:
+            return JsonResponse({'error': 'Email and password are required'}, status=400)
 
         try:
             user = Admin.objects.get(emailid=email)
         except Admin.DoesNotExist:
             return JsonResponse({'error': 'No admin found with this email'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': 'An unexpected error occurred: ' + str(e)}, status=500)
 
         if check_password(password, user.password):
             admin_token = get_token(user, user_type='admin')
             return JsonResponse({'message': 'Login successful', 'token': admin_token})
         else:
-            return JsonResponse({'error': 'Invalid password'}, status=401)
-
-
+            return JsonResponse({'error': 'Invalid email or password'}, status=401)
 
 
 class AddAdmin(APIView):
-    def post(self , request):
-        data = request.data
+    def post(self, request):
+        try:
+            data = request.data
+
+            # Deserialize the request data using AdminSerializer
+            admin_serializer = AdminSerializer(data=data)
+
+            # Check if the deserialized data passes validation
+            if admin_serializer.is_valid():
+                # If data is valid, save it
+                admin_serializer.save()
+                # Return a success response with status code 201
+                return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            else:
+                # If data is not valid, return validation errors
+                return JsonResponse(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
+
+        except Exception as e:
+            # Handle unexpected exceptions
+            return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
         admin_serializer = AdminSerializer(data=data)
         if admin_serializer.is_valid():
@@ -73,13 +105,6 @@ class AddAdmin(APIView):
             return JsonResponse(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-#Add Department    
-class AddDepartment(APIView):
-
-    def post(self, request):
-        data = request.data
-        name = data.get('department')
-        code = data.get('department_code')
 
         if Department.objects.filter(department=name).exists():
             return JsonResponse({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -94,45 +119,64 @@ class AddDepartment(APIView):
         else:
             return JsonResponse(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def get(self, request):
-
-        departments = Department.objects.all().order_by('id')
-       
-        
-        departmentDetails = []
-
-        for department in departments:
-            departmentDetails.append({
-
-                'id'              :  department.id,
-                'departmentName'  :  department.department,
-                'departmentCode'  :  department.department_code,
-                'program'         :  department.program,
-            })
-
-
-        return JsonResponse(departmentDetails, safe=False)
-    
-
-    def put(self , request):
-        data = request.data
-        id = data.get('id')
+class AddDepartment(APIView):
+    def post(self, request):
         try:
+            data = request.data
+            name = data.get('department')
+            code = data.get('department_code')
+
+            if Department.objects.filter(department=name).exists():
+                return JsonResponse({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if Department.objects.filter(department_code=code).exists():
+                return JsonResponse({'error': 'A department with this code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            department_Serializer = DepartmentSerializer(data=data)
+            if department_Serializer.is_valid():
+                department_Serializer.save()
+                return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+            else:
+                return JsonResponse(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get(self, request):
+        try:
+            departments = Department.objects.all().order_by('id')
+            departmentDetails = []
+
+            for department in departments:
+                departmentDetails.append({
+                    'id': department.id,
+                    'departmentName': department.department,
+                    'departmentCode': department.department_code,
+                    'program': department.program,
+                })
+            return JsonResponse(departmentDetails, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def put(self, request):
+        try:
+            data = request.data
+            id = data.get('id')
             department = Department.objects.get(id=id)
         except Department.DoesNotExist:
             return JsonResponse({"message": "Department not found"}, status=404)
+            if 'department' in data:
+                department.department = data['department']
+            if 'department_code' in data:
+                department.department_code = data['department_code']
+            if 'program' in data:
+                department.program = data['program']
+            department.save()
+            return JsonResponse({"message": "Department updated successfully"}, status=status.HTTP_200_OK)
+        except Department.DoesNotExist:
+            return JsonResponse({"message": "Department not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        if 'department' in data:
-            department.department = data['department']
-        if 'department_code' in data:
-            department.department_code = data['department_code']
-        if 'program' in data:
-            department.program = data['program']
-
-        department.save()
-
-        return JsonResponse({"message": "Department updated successfully"}, status=200)
-    
 
     def delete(self, request, pk):
         try:
@@ -141,6 +185,7 @@ class AddDepartment(APIView):
             return JsonResponse(status=status.HTTP_204_NO_CONTENT)
         except Department.DoesNotExist:
             return JsonResponse(status=status.HTTP_404_NOT_FOUND)
+
 
 
 
@@ -155,13 +200,10 @@ class AddSubject(APIView):
         if Subject.objects.filter(subject=name).exists():
             return JsonResponse({'error':'a subject with same name already exists'},status=status.HTTP_400_BAD_REQUEST)
         if Subject.objects.filter(subject_code=code).exists():
-            return JsonResponse({'error':'a subject with the code already exists'},status=status.HTTP_400_BAD_REQUEST)
-        
-        
+            return JsonResponse({'error':'a subject with the code already exists'},status=status.HTTP_400_BAD_REQUEST)       
         subject_Serializer = SubjectSerializer(data = data)
-
-        if subject_Serializer.is_valid():
-            subject_Serializer.save()
+            if subject_Serializer.is_valid():
+                subject_Serializer.save()
 
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         
@@ -170,56 +212,56 @@ class AddSubject(APIView):
             
 
     def get(self,request):
+        try:
       
-        subjects = Subject.objects.all().order_by('id')
-       
-        subjectDetails = []
+            subjects = Subject.objects.all().order_by('id')
+        
+            subjectDetails = []
 
-        for subject in subjects:
-          
-            subjectDetails.append({
+            for subject in subjects:
+            
+                subjectDetails.append({
 
-                'id'       : subject.id,
-                'subjectName' : subject.subject,
-                'subjectCode'   : subject.subject_code,
-                'programme'   : subject.programme,
-                'semester'    : subject.semester , 
-                'department_id' : subject.department_id,
-                'department_name'  : subject.department.department,
-                'elective'         : subject.elective
-                
-            })
+                    'id'       : subject.id,
+                    'subjectName' : subject.subject,
+                    'subjectCode'   : subject.subject_code,
+                    'programme'   : subject.programme,
+                    'semester'    : subject.semester , 
+                    'department_id' : subject.department_id,
+                    'department_name'  : subject.department.department,
+                    'elective'         : subject.elective
+                    
+                })
 
 
-        return JsonResponse(subjectDetails, safe=False)
+            return JsonResponse(subjectDetails, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def put(self , request):
-
-        data = request.data
-        id   = data.get('id')
-
         try:
-            subject = Subject.objects.get(id = id)
 
+            data = request.data
+            id   = data.get('id')
+
+            try:
+                subject = Subject.objects.get(id = id)
         except Subject.DoesNotExist:
             return JsonResponse({"messaage" : "Subject not found"},status=404)
         
+            if 'subject' in data:
+                subject.subject = data['subject']
+            if 'subject_code' in data:
+                subject.subject_code = data['subject_code']
+            if 'programme' in data:
+                subject.programme = data['programme']
 
-        if 'subject' in data:
-            subject.subject = data['subject']
-        if 'subject_code' in data:
-            subject.subject_code = data['subject_code']
-        if 'programme' in data:
-            subject.programme = data['programme']
+            if 'semester' in data:
+                subject.semester = data['semester']
 
-        if 'semester' in data:
-            subject.semester = data['semester']
-
-        subject.save()
-
+            subject.save()
         return JsonResponse({"message": "Subject updated successfully"}, status=200)
-
 
     def delete(self, request, pk):
         try:
@@ -230,11 +272,14 @@ class AddSubject(APIView):
             return JsonResponse(status=status.HTTP_404_NOT_FOUND)
 
 
+
+
 class SendInvite(APIView):
 
     def post(self,request):
+        try:
         
-        email_addresses = request.data.get('emails', [])
+            email_addresses = request.data.get('emails', [])
 
         if not email_addresses:
             return JsonResponse({"error": "No email addresses provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -245,6 +290,7 @@ class SendInvite(APIView):
             return JsonResponse({"message": "Emails sent successfully."}, status=status.HTTP_200_OK)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
     def send_mail(self, recipient_email):
@@ -328,6 +374,8 @@ class SendInvite(APIView):
             server.quit()
         except Exception as e:
             return JsonResponse(f"Error sending email: {str(e)}",status=status.HTTP_400_BAD_REQUEST)
+      
+
 
     
 
@@ -335,21 +383,39 @@ class SendInvite(APIView):
 #Add Teacher   
 class AddTeacher(APIView):
     def post(self, request):
-        data = request.data.copy()
-        department_ids = data.get('department_id')
-        subject_ids = data.get('subject_id')
+        try:
+            data = request.data.copy()
+            department_ids = data.get('department_id')
+            subject_ids = data.get('subject_id')
+            phone=data.get('phoneNumber')
+            email=data.get('email')
+            if Teacher.objects.filter(phoneNumber=phone).exists():
+                return JsonResponse({'error': ' Phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if Teacher.objects.filter(email=email).exists():
+                return JsonResponse({'error': 'email already exists.'}, status=status.HTTP_400_BAD_REQUEST) 
 
-        
-        if department_ids:
-            if isinstance(department_ids, str) and ',' in department_ids:
-                department_ids = [int(id.strip()) for id in department_ids.split(',')]
-            else:
-                department_ids = [int(department_ids)]
-            data.setlist('departments', department_ids)
+            
+            if department_ids:
+                if isinstance(department_ids, str) and ',' in department_ids:
+                    department_ids = [int(id.strip()) for id in department_ids.split(',')]
+                else:
+                    department_ids = [int(department_ids)]
+                data.setlist('departments', department_ids)
 
-        if subject_ids:
-            if isinstance(subject_ids, str) and ',' in subject_ids:
-                subject_ids = [int(id.strip()) for id in subject_ids.split(',')]
+            if subject_ids:
+                if isinstance(subject_ids, str) and ',' in subject_ids:
+                    subject_ids = [int(id.strip()) for id in subject_ids.split(',')]
+                else:
+                    subject_ids = [int(subject_ids)]
+                data.setlist('subjects', subject_ids)
+
+            teacher_serializer = TeacherSerializer(data=data)
+            if teacher_serializer.is_valid():
+                teacher = teacher_serializer.save()
+                image_url = teacher.image.url
+
+                return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
             else:
                 subject_ids = [int(subject_ids)]
             data.setlist('subjects', subject_ids)
