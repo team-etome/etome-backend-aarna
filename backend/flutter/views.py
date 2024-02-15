@@ -129,8 +129,10 @@ class Answers(APIView):
         student_id = request.GET.get('studentId')
         question_code = request.GET.get('question')
 
-        if not student_id:
-            return JsonResponse({'error': 'Student ID is required'}, status=400)
+        # print(student_id , question_code , "studentsssssssssssssssssssssssssss")
+
+        # if not student_id:
+        #     return JsonResponse({'error': 'Student ID is required'}, status=400)
         
         if not student_id and not question_code:
             answers = Answer.objects.all()
@@ -147,6 +149,7 @@ class Answers(APIView):
             } for answer in answers]
             
             return JsonResponse({'data': answerdetails})
+        
         
         # if not question_code:
         #     answers = Answer.objects.filter(studentId=student_id)

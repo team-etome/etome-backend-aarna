@@ -199,6 +199,7 @@ class InvgilatorLogin(APIView):
                 for qpaper in question_papers:
                     questions = Questions.objects.filter(questionpaper=qpaper)
                     question_images = QuestionImage.objects.filter(question__in=questions)
+                    
 
                     images = [qimage.image.url for qimage in question_images]
                     question_paper_details.append({
@@ -206,6 +207,7 @@ class InvgilatorLogin(APIView):
                         'exam_name': qpaper.exam_name,
                         'department': qpaper.department.department, 
                         'images': images,
+                        'total_time' : qpaper.total_time
                     })
 
                 response_data = {

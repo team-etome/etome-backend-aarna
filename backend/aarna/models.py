@@ -8,6 +8,6 @@ class TimeTable(models.Model):
     department         =   models.ForeignKey(Department, on_delete=models.CASCADE, null=True, blank=True )
     subject            =   models.ForeignKey(Subject, on_delete=models.CASCADE)
     exam_date          =   models.DateField()
-    exam_time         =   models.CharField(max_length = 30)
+    exam_time          =   models.CharField(max_length = 30)
     
 

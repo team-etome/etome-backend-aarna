@@ -9,6 +9,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from rest_framework.response import Response
 
 
 
@@ -95,27 +96,7 @@ class AddAdmin(APIView):
             return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-        admin_serializer = AdminSerializer(data=data)
-        if admin_serializer.is_valid():
-            admin_serializer.save()
-            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return JsonResponse(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-        if Department.objects.filter(department=name).exists():
-            return JsonResponse({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if Department.objects.filter(department_code = code).exists():
-            return JsonResponse({'error': 'A department with this code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        department_Serializer = DepartmentSerializer(data=data)
-        if department_Serializer.is_valid():
-            department_Serializer.save()
-            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return JsonResponse(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AddDepartment(APIView):
     def post(self, request):
@@ -155,13 +136,11 @@ class AddDepartment(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def put(self, request):
-        try:
+    def put(self, request,pk):
             data = request.data
             id = data.get('id')
             department = Department.objects.get(id=id)
-        except Department.DoesNotExist:
-            return JsonResponse({"message": "Department not found"}, status=404)
+        
             if 'department' in data:
                 department.department = data['department']
             if 'department_code' in data:
@@ -170,17 +149,14 @@ class AddDepartment(APIView):
                 department.program = data['program']
             department.save()
             return JsonResponse({"message": "Department updated successfully"}, status=status.HTTP_200_OK)
-        except Department.DoesNotExist:
-            return JsonResponse({"message": "Department not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+       
 
 
     def delete(self, request, pk):
         try:
             department = Department.objects.get(id=pk)
             department.delete()
-            return JsonResponse(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Department.DoesNotExist:
             return JsonResponse(status=status.HTTP_404_NOT_FOUND)
 
