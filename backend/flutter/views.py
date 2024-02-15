@@ -7,8 +7,6 @@ from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from flutter.models import *
 from .serializers import *
-from django.db import transaction
-from django.db.models import Q
 from rest_framework import status
 from datetime import datetime
 
@@ -134,11 +132,8 @@ class Answers(APIView):
         if not student_id:
             return JsonResponse({'error': 'Student ID is required'}, status=400)
         
-        # if not student_id and not question_code:
-        answers = Answer.objects.all()
-        
- 
-
+        if not student_id and not question_code:
+            answers = Answer.objects.all()
             answerdetails = [{
 
                 'answer_id' : answer.id,
@@ -150,8 +145,8 @@ class Answers(APIView):
                 'answerData': answer.answer_data,
                 
             } for answer in answers]
-        
-        return JsonResponse({'data': answerdetails})
+            
+            return JsonResponse({'data': answerdetails})
         
         # if not question_code:
         #     answers = Answer.objects.filter(studentId=student_id)
@@ -178,12 +173,11 @@ class Evaluations(APIView):
         try:
           data = request.data
           evaluation_serializer = EvaluationSerializer(data = data)
-              if evaluation_serializer.is_valid():
-                  evaluation_serializer.save()
-
-                  return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-              else:
-                  return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+          if evaluation_serializer.is_valid():
+            evaluation_serializer.save()
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+          else:
+              return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
