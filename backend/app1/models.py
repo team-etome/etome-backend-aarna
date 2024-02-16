@@ -99,12 +99,13 @@ class QuestionPaper(models.Model):
     department       =  models.ForeignKey(Department ,on_delete=models.CASCADE , null = True , blank = True)
     subject          =  models.ForeignKey(Subject ,on_delete=models.CASCADE , null = True , blank = True) 
     semester         =  models.CharField(max_length = 15,null = True , blank = True)
-    total_time       =  models.CharField(max_length = 15)
     exam_date        =  models.DateField()
     teacher          =  models.ForeignKey(Teacher ,on_delete=models.CASCADE, blank = True , null = True)
     send_Blueprint   =  models.BooleanField(default = False)
     term             =  models.CharField(max_length = 15,null=True,blank = True)
     status           =  models.CharField(choices = STATUS_CHOICES,default='send')
+    start_time       =  models.TimeField(blank = True , null = True)
+    end_time         =  models.TimeField(blank = True , null = True)
 
 
 
