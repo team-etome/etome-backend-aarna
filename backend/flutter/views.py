@@ -35,80 +35,56 @@ class AddStudent(APIView):
     else:
         return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        student_serializer = StudentSerializer(data=request.data)
+       
    
 class StudentExaminationLogin(APIView):
     def post(self, request, *args, **kwargs):
         roll_no = request.data.get('roll_no')
         password = request.data.get('password')
 
-       
         try:
             user = Student.objects.get(roll_no=roll_no)
-           
-
-           
             if user is not None and check_password(password, user.password):
-                current_date = datetime.now().date()
+                current_datetime = datetime.now() 
                 department_id = user.department_id
-                
-                
 
                 try:
-                    questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_date)
+                    questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_datetime.date())
                     main_question = Questions.objects.filter(questionpaper=questionpaper).first()
 
-                   
-                    
-
-                
-                    question_paper_details = {
-                        'student_id':user.id,
-                        'exam_name': questionpaper.exam_name,
-                        'total_time': questionpaper.total_time,
-                        'semester': questionpaper.semester,
-                        'department': questionpaper.department.department,  
-                        'subject': questionpaper.subject.subject, 
-                        'subject_code': questionpaper.subject.subject_code, 
-                        'teacher': questionpaper.teacher.name,  
-                        'question_id' : main_question.id,
-                        'question_code'      : main_question.questioncode ,
-                        # 'total_questions'    : total_compulsory_questions
-                        
-
-                    }
-
-
-
-                   
-                    if main_question:
-                        try:
-
-                            question_image = QuestionImage.objects.get(question=main_question)
-                            question_image_data = question_image.image.url
-
-                            response_data = {
-                                'message': 'Login successful',
-                                'question_paper_details': question_paper_details,
-                                'q_image': question_image_data
-                            }
-                            return JsonResponse(response_data)
-
-                        except QuestionImage.DoesNotExist:
-                            return JsonResponse({'error': 'Question image not found'}, status=403)
-                    else:
+                    if not main_question:
                         return JsonResponse({'error': 'No questions found for the exam'}, status=405)
 
+                    exam_end_datetime = datetime.combine(current_datetime.date(), questionpaper.end_time)
+                    remaining_time = round((exam_end_datetime - current_datetime).total_seconds() / 60)
+                    question_paper_details = {
+                        'student_id': user.id,
+                        'exam_name': questionpaper.exam_name,
+                        'total_time': remaining_time,  
+                        'semester': questionpaper.semester,
+                        'department': questionpaper.department.department,
+                        'subject': questionpaper.subject.subject,
+                        'subject_code': questionpaper.subject.subject_code,
+                        'teacher': questionpaper.teacher.name,
+                        'question_id': main_question.id,
+                        'question_code': main_question.questioncode,
+                    }
+                    question_image = QuestionImage.objects.get(question=main_question)
+                    response_data = {
+                        'message': 'Login successful',
+                        'question_paper_details': question_paper_details,
+                        'q_image': question_image.image.url
+                    }
+                    return JsonResponse(response_data)
                 except QuestionPaper.DoesNotExist:
-                    return JsonResponse({'error': 'No exam scheduled for today'}, status=410)
+                    return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=404)
+                except QuestionImage.DoesNotExist:
+                    return JsonResponse({'error': 'Question image not found'}, status=403)
             else:
                 return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
         except Student.DoesNotExist:
             return JsonResponse({'error': 'Student not found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
         
 class Answers(APIView):
 

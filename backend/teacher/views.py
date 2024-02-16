@@ -101,7 +101,8 @@ class AssignBlueprint(APIView):
                 'term'           :  blueprint.term,
                 'status'         :  blueprint.status,
                 'vetTeacher'     :  vetTeacher,
-                'time'           :  blueprint.total_time
+                'start_time'     :  blueprint.start_time , 
+                'end_time'       :  blueprint.end_time
             })
 
         return JsonResponse(blueprintDetails, safe=False)       

@@ -28,7 +28,7 @@ class Timetable(APIView):
                         department=questionpaper.department.department,
                         subject=questionpaper.subject.subject,
                         exam_date=questionpaper.exam_date,
-                        exam_time=questionpaper.total_time,
+                        # exam_time=questionpaper.total_time,
                     )
                 except Exception as e:
                     return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -110,7 +110,10 @@ class HallTicket(APIView):
             timetable = TimeTable.objects.filter(department_id=student.department_id).order_by('exam_date')
             timetable_serializer = TimeTableSerializer(timetable, many=True)  
 
-         
+            
+            # if TimeTable.DoesNotExist:
+            #     return JsonResponse({"detail": "timetable not found"}, status=403)
+            # else:
             response_data = {
                 'student'         : student_serializer.data,
                 'department_name' : student.department.department,
@@ -121,6 +124,9 @@ class HallTicket(APIView):
             return JsonResponse(response_data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
             return JsonResponse({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        except TimeTable.DoesNotExist:
+            return JsonResponse({"detail": "timetable not found"}, status=403)
 
 class QuestionsView(APIView):
 
@@ -167,65 +173,118 @@ class QuestionsView(APIView):
         except Exception as e:
                 return JsonResponse({"success": False, "message": str(e)}, status=500)
 
-class InvgilatorLogin(APIView):
+# class InvgilatorLogin(APIView):
 
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        password = request.data.get('password')
-        try:
-            teacher = Teacher.objects.get(email=email)
-        except Teacher.DoesNotExist:
-            return JsonResponse({'error': 'Invalid email or password'}, status=401)
+#     def post(self, request, *args, **kwargs):
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+#         try:
+#             teacher = Teacher.objects.get(email=email)
+#         except Teacher.DoesNotExist:
+#             return JsonResponse({'error': 'Invalid email or password'}, status=401)
 
-        if teacher is not None and check_password(password, teacher.password):
-            teacher_token = get_token(teacher, user_type='teacher') 
+#         if teacher is not None and check_password(password, teacher.password):
+#             teacher_token = get_token(teacher, user_type='teacher') 
 
-            seating_arrangement_details = []
-            try:
-                seating_arrangements = SeatingArrangement.objects.filter(teacher=teacher)
+#             seating_arrangement_details = []
+#             try:
+#                 seating_arrangements = SeatingArrangement.objects.filter(teacher=teacher)
                 
-                for seating in seating_arrangements:
-                    seating_arrangement_details.append({
-                        'hall_name': seating.hall_name,
-                        'department_students': seating.department_students, 
-                    })
+#                 for seating in seating_arrangements:
+#                     seating_arrangement_details.append({
+#                         'hall_name': seating.hall_name,
+#                         'department_students': seating.department_students, 
+#                     })
 
-                department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]  
-                department_ids = [item for sublist in department_ids for item in sublist]  
+#                 department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]  
+#                 department_ids = [item for sublist in department_ids for item in sublist]  
 
-                question_papers = QuestionPaper.objects.filter(department__id__in=department_ids)
+#                 question_papers = QuestionPaper.objects.filter(department__id__in=department_ids)
 
-                question_paper_details = []
-                for qpaper in question_papers:
-                    questions = Questions.objects.filter(questionpaper=qpaper)
-                    question_images = QuestionImage.objects.filter(question__in=questions)
+#                 question_paper_details = []
+#                 for qpaper in question_papers:
+#                     questions = Questions.objects.filter(questionpaper=qpaper)
+#                     question_images = QuestionImage.objects.filter(question__in=questions)
                     
 
-                    images = [qimage.image.url for qimage in question_images]
-                    question_paper_details.append({
-                        'question_paper_id': qpaper.id,
-                        'exam_name': qpaper.exam_name,
-                        'department': qpaper.department.department, 
-                        'images': images,
-                        'total_time' : qpaper.total_time
-                    })
+#                     images = [qimage.image.url for qimage in question_images]
+#                     question_paper_details.append({
+#                         'question_paper_id': qpaper.id,
+#                         'exam_name': qpaper.exam_name,
+#                         'department': qpaper.department.department, 
+#                         'images': images,
+                       
+#                     })
 
-                response_data = {
-                    'message': 'Login successful',
-                    'token': teacher_token,
-                    'question_papers': question_paper_details,
-                    'seating_arrangements': seating_arrangement_details,  
-                }
+#                 response_data = {
+#                     'message': 'Login successful',
+#                     'token': teacher_token,
+#                     'question_papers': question_paper_details,
+#                     'seating_arrangements': seating_arrangement_details,  
+#                 }
 
-                return JsonResponse(response_data, status=200)
+#                 return JsonResponse(response_data, status=200)
 
-            except SeatingArrangement.DoesNotExist:
-                return JsonResponse({'message': 'Login successful', 'token': teacher_token, 'error': 'No seating arrangement found for this teacher.'}, status=200)
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+#             except SeatingArrangement.DoesNotExist:
+#                 return JsonResponse({'message': 'Login successful', 'token': teacher_token, 'error': 'No seating arrangement found for this teacher.'}, status=200)
+#         else:
+#             return JsonResponse({'error': 'Invalid credentials'}, status=401)
         
 
 
+
+class InvgilatorLogin(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        # Validate and authenticate the teacher
+        try:
+            teacher = Teacher.objects.get(email=email)
+            if not check_password(password, teacher.password):
+                raise ValueError("Invalid credentials")
+        except Teacher.DoesNotExist:
+            return JsonResponse({'error': 'Invalid email or password'}, status=401)
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=401)
+        # Generate token for authenticated teacher
+        try:
+            teacher_token = get_token(teacher, user_type='teacher')
+        except Exception as e:  # Replace Exception with a more specific exception if possible
+            return JsonResponse({'error': 'Failed to generate token'}, status=500)
+        seating_arrangement_details = []
+        seating_arrangements = SeatingArrangement.objects.filter(teacher=teacher)
+        for seating in seating_arrangements:
+            seating_arrangement_details.append({
+                'hall_name': seating.hall_name,
+                'department_students': seating.department_students,
+            })
+        question_paper_details = []
+        department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]
+        department_ids = [item for sublist in department_ids for item in sublist]
+        question_papers = QuestionPaper.objects.filter(department__id__in=department_ids)
+        for qpaper in question_papers:
+            questions = Questions.objects.filter(questionpaper=qpaper)
+            question_images = QuestionImage.objects.filter(question__in=questions)
+            images = [qimage.image.url for qimage in question_images]
+            question_paper_details.append({
+                'question_paper_id': qpaper.id,
+                'exam_name': qpaper.exam_name,
+                'department': qpaper.department.department,
+                'images': images,
+                'total_time': qpaper.total_time,
+            })
+        if not seating_arrangement_details :
+            return JsonResponse({'error': 'Login cannot proceed due to missing seating arrangements '}, status=403)
+        elif not question_paper_details:
+            return JsonResponse({'error': 'Login cannot proceed due to missing question papers.'}, status=404)
+        else:
+            response_data = {
+                'message': 'Login successful',
+                'token': teacher_token,
+                'question_papers': question_paper_details,
+                'seating_arrangements': seating_arrangement_details,
+            }
+            return JsonResponse(response_data, status=200)
         
 
         
