@@ -14,6 +14,7 @@ import random
 import string
 import base64
 from django.core.files.base import ContentFile
+from rest_framework.response import Response
 
 
 
@@ -58,9 +59,12 @@ class EvaluationAssign(APIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
+        print(data,"dataaaaaaaaaaaaaaaaaa")
         department_name = data.get('department')
         semester = data.get('semester')
         subject_id = data.get('subject')
+        endDate   = data.get('endDate')
+        term      = data.get('term')
 
         try:
             department = Department.objects.get(department=department_name)
@@ -86,8 +90,10 @@ class EvaluationAssign(APIView):
                     semester=semester,
                     subject=subject,
                     teacher_id=teacher_id,
-                    defaults={'students': json.dumps(papers)}
-                )
+                    defaults={'students': json.dumps(papers)},
+                    endDate = endDate,
+                    term  = term
+                )  
                 return JsonResponse({'message': 'AssignEvaluation objects updated or created successfully'})
 
 
@@ -97,6 +103,43 @@ class EvaluationAssign(APIView):
             return JsonResponse("Department not found", status=404)
         except Subject.DoesNotExist:
             return JsonResponse("Subject not found", status=404)
+        
+
+    def get(self, request, *args, **kwargs):
+        # Optional: Retrieve query parameters for filtering
+        department_id = request.query_params.get('department_id')
+        semester = request.query_params.get('semester')
+        subject_id = request.query_params.get('subject_id')
+        teacher_id = request.query_params.get('teacher_id')
+
+        filters = {}
+        if department_id:
+            filters['department_id'] = department_id
+        if semester:
+            filters['semester'] = semester
+        if subject_id:
+            filters['subject_id'] = subject_id
+        if teacher_id:
+            filters['teacher_id'] = teacher_id
+
+        try:
+            evaluations = AssignEvaluation.objects.filter(**filters)
+            evaluation_data = []
+
+            for evaluation in evaluations:
+                evaluation_data.append({
+                    'department': evaluation.department.department,
+                    'semester': evaluation.semester,
+                    'subject': evaluation.subject.subject_name,
+                    'teacher': evaluation.teacher.name if evaluation.teacher else None,
+                    'endDate': evaluation.endDate,
+                    'term': evaluation.term,
+                    'students': evaluation.students
+                })
+
+            return Response(evaluation_data, status=status.HTTP_200_OK)
+        except AssignEvaluation.DoesNotExist:
+            return Response({"error": "No evaluations found"}, status=status.HTTP_404_NOT_FOUND)
 
 class HallTicket(APIView):
 
@@ -266,12 +309,17 @@ class InvgilatorLogin(APIView):
             questions = Questions.objects.filter(questionpaper=qpaper)
             question_images = QuestionImage.objects.filter(question__in=questions)
             images = [qimage.image.url for qimage in question_images]
+            start_time = qpaper.start_time
+            end_time   = qpaper.end_time
+            start_time_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
+            end_time_str = end_time.strftime('%Y-%m-%d %H:%M:%S')
             question_paper_details.append({
                 'question_paper_id': qpaper.id,
                 'exam_name': qpaper.exam_name,
                 'department': qpaper.department.department,
+                'start_time' : start_time_str,
+                'end_time' : end_time_str ,
                 'images': images,
-                'total_time': qpaper.total_time,
             })
         if not seating_arrangement_details :
             return JsonResponse({'error': 'Login cannot proceed due to missing seating arrangements '}, status=403)
