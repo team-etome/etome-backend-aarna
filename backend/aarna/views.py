@@ -40,78 +40,53 @@ class Timetable(APIView):
 
 
 class EvaluationAssign(APIView):
-
- 
-    def distribute_papers_to_teachers(self,teachers, answer_papers):
+    def distribute_papers_to_teachers(self, teachers, students):
         num_teachers = len(teachers)
         assigned_papers = {teacher.id: [] for teacher in teachers}
-
-        all_papers = [(student_roll, papers) for student_roll, papers in answer_papers.items()]
-        idx = 0  # Index to iterate over papers
-
-        while all_papers:
+        all_students = list(students)
+        idx = 0  # Index to iterate over students
+        while all_students:
             teacher = teachers[idx % num_teachers]
-            student_roll, papers = all_papers.pop(0)  # Get the first set of papers
-            assigned_papers[teacher.id].append({student_roll: papers})
+            student = all_students.pop(0)  # Get the next student
+            assigned_papers[teacher.id].append(student)
             idx += 1
-
         return assigned_papers
-
     def post(self, request, *args, **kwargs):
         data = request.data
-        print(data,"dataaaaaaaaaaaaaaaaaa")
         department_name = data.get('department')
         semester = data.get('semester')
         subject_id = data.get('subject')
-        endDate   = data.get('endDate')
-        term      = data.get('term')
-
+        endDate = data.get('endDate')
+        term = data.get('term')
         try:
             department = Department.objects.get(department=department_name)
             subject = Subject.objects.get(id=subject_id)
-            students = Student.objects.filter(department=department)
-
-            answer_papers = {}
-            for student in students:
-                questions = Questions.objects.filter(questionpaper__subject=subject)
-                answers = Answer.objects.filter(student=student, question__in=questions)
-                answer_data = [answer.answer_data for answer in answers]
-                answer_papers[student.roll_no] = answer_data
-
+            students = Student.objects.filter(department=department).values_list('roll_no', flat=True)
             teachers = Teacher.objects.filter(id__in=data.get('teacher', []))
-
-           
-            distributed_papers = self.distribute_papers_to_teachers(teachers, answer_papers)
-
-            
-            for teacher_id, papers in distributed_papers.items():
+            distributed_papers = self.distribute_papers_to_teachers(teachers, students)
+            for teacher, student_roll_numbers in distributed_papers.items():
                 AssignEvaluation.objects.update_or_create(
                     department=department,
                     semester=semester,
                     subject=subject,
-                    teacher_id=teacher_id,
-                    defaults={'students': json.dumps(papers)},
-                    endDate = endDate,
-                    term  = term
-                )  
-                return JsonResponse({'message': 'AssignEvaluation objects updated or created successfully'})
-
-
-            return JsonResponse("Evaluation assignments updated successfully.")
-
+                    teacher_id=teacher,
+                    defaults={
+                        'students': json.dumps(student_roll_numbers),
+                        'endDate': endDate,
+                        'term': term
+                    }
+                )
+            return JsonResponse({'message': 'AssignEvaluation objects updated or created successfully'})
         except Department.DoesNotExist:
             return JsonResponse("Department not found", status=404)
         except Subject.DoesNotExist:
             return JsonResponse("Subject not found", status=404)
-        
-
     def get(self, request, *args, **kwargs):
         # Optional: Retrieve query parameters for filtering
         department_id = request.query_params.get('department_id')
         semester = request.query_params.get('semester')
         subject_id = request.query_params.get('subject_id')
         teacher_id = request.query_params.get('teacher_id')
-
         filters = {}
         if department_id:
             filters['department_id'] = department_id
@@ -121,11 +96,9 @@ class EvaluationAssign(APIView):
             filters['subject_id'] = subject_id
         if teacher_id:
             filters['teacher_id'] = teacher_id
-
         try:
             evaluations = AssignEvaluation.objects.filter(**filters)
             evaluation_data = []
-
             for evaluation in evaluations:
                 evaluation_data.append({
                     'department': evaluation.department.department,
@@ -136,7 +109,6 @@ class EvaluationAssign(APIView):
                     'term': evaluation.term,
                     'students': evaluation.students
                 })
-
             return Response(evaluation_data, status=status.HTTP_200_OK)
         except AssignEvaluation.DoesNotExist:
             return Response({"error": "No evaluations found"}, status=status.HTTP_404_NOT_FOUND)
@@ -216,71 +188,12 @@ class QuestionsView(APIView):
         except Exception as e:
                 return JsonResponse({"success": False, "message": str(e)}, status=500)
 
-# class InvgilatorLogin(APIView):
-
-#     def post(self, request, *args, **kwargs):
-#         email = request.data.get('email')
-#         password = request.data.get('password')
-#         try:
-#             teacher = Teacher.objects.get(email=email)
-#         except Teacher.DoesNotExist:
-#             return JsonResponse({'error': 'Invalid email or password'}, status=401)
-
-#         if teacher is not None and check_password(password, teacher.password):
-#             teacher_token = get_token(teacher, user_type='teacher') 
-
-#             seating_arrangement_details = []
-#             try:
-#                 seating_arrangements = SeatingArrangement.objects.filter(teacher=teacher)
-                
-#                 for seating in seating_arrangements:
-#                     seating_arrangement_details.append({
-#                         'hall_name': seating.hall_name,
-#                         'department_students': seating.department_students, 
-#                     })
-
-#                 department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]  
-#                 department_ids = [item for sublist in department_ids for item in sublist]  
-
-#                 question_papers = QuestionPaper.objects.filter(department__id__in=department_ids)
-
-#                 question_paper_details = []
-#                 for qpaper in question_papers:
-#                     questions = Questions.objects.filter(questionpaper=qpaper)
-#                     question_images = QuestionImage.objects.filter(question__in=questions)
-                    
-
-#                     images = [qimage.image.url for qimage in question_images]
-#                     question_paper_details.append({
-#                         'question_paper_id': qpaper.id,
-#                         'exam_name': qpaper.exam_name,
-#                         'department': qpaper.department.department, 
-#                         'images': images,
-                       
-#                     })
-
-#                 response_data = {
-#                     'message': 'Login successful',
-#                     'token': teacher_token,
-#                     'question_papers': question_paper_details,
-#                     'seating_arrangements': seating_arrangement_details,  
-#                 }
-
-#                 return JsonResponse(response_data, status=200)
-
-#             except SeatingArrangement.DoesNotExist:
-#                 return JsonResponse({'message': 'Login successful', 'token': teacher_token, 'error': 'No seating arrangement found for this teacher.'}, status=200)
-#         else:
-#             return JsonResponse({'error': 'Invalid credentials'}, status=401)
-        
-
-
 
 class InvgilatorLogin(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        # Validate and authenticate the teacher
+       
         try:
             teacher = Teacher.objects.get(email=email)
             if not check_password(password, teacher.password):
@@ -311,8 +224,10 @@ class InvgilatorLogin(APIView):
             images = [qimage.image.url for qimage in question_images]
             start_time = qpaper.start_time
             end_time   = qpaper.end_time
-            start_time_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
-            end_time_str = end_time.strftime('%Y-%m-%d %H:%M:%S')
+            
+            start_time_str = start_time.strftime('%H:%M')
+            end_time_str = end_time.strftime('%H:%M')
+
             question_paper_details.append({
                 'question_paper_id': qpaper.id,
                 'exam_name': qpaper.exam_name,
