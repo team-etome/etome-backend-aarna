@@ -9,7 +9,7 @@ from flutter.models import *
 from .serializers import *
 from rest_framework import status
 from datetime import datetime
-
+import json
 
 
 
@@ -146,43 +146,32 @@ class Answers(APIView):
         #         return JsonResponse({'error': 'No matching record found'}, status=404)
         
         
-class Evaluations(APIView):
-
-    def post(self ,request):
-        try:
-          data = request.data
-          evaluation_serializer = EvaluationSerializer(data = data)
-          if evaluation_serializer.is_valid():
-            evaluation_serializer.save()
-            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-          else:
-              return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
    
-    def get(self , request):
-        try:
+    # def get(self , request):
+    #     try:
 
-            evaluations = Evaluation.objects.all()
+    #         evaluations = Evaluation.objects.all()
 
-            answerdetails = []
+    #         answerdetails = []
 
-            for evaluation in evaluations:
-                answerdetails.append({
-                    'studentId':evaluation.answer.student.studentName ,
-                    # 'teacherId':evaluation.teacher,
-                    'markData':evaluation.mark_data,
-                    'totalMark':evaluation.total_mark,
-                    'date':evaluation.date,
-                    'subject' : evaluation.answer.question.questionpaper.subject.subject,
-                    'department' : evaluation.answer.student.department.department
-                })
+    #         for evaluation in evaluations:
+    #             answerdetails.append({
+    #                 'studentId':evaluation.answer.student.studentName ,
+    #                 # 'teacherId':evaluation.teacher,
+    #                 'markData':evaluation.mark_data,
+    #                 'totalMark':evaluation.total_mark,
+    #                 'date':evaluation.date,
+    #                 'subject' : evaluation.answer.question.questionpaper.subject.subject,
+    #                 'department' : evaluation.answer.student.department.department
+    #             })
             
 
-            return JsonResponse(answerdetails, safe=False)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #         return JsonResponse(answerdetails, safe=False)
+    #     except Exception as e:
+    #         return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 
@@ -212,3 +201,65 @@ class StudentApplicationLogin(APIView):
 
 
 
+class EvaluationLogin(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        print(email , password,'gaaaaaaaaaaaaaaaaa')
+
+        try:
+            teacher = Teacher.objects.get(email=email)
+            if not check_password(password, teacher.password):
+                return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            assigned_evaluations = AssignEvaluation.objects.filter(teacher=teacher)
+            answer_details = []
+
+            for evaluation in assigned_evaluations:
+               
+                student_roll_nos = json.loads(evaluation.students)
+                subject_id = evaluation.subject
+   
+                students = Student.objects.filter(roll_no__in=student_roll_nos)
+                student_ids = students.values_list('id', flat=True)
+
+                answers = Answer.objects.filter(student_id__in=student_ids, question__questionpaper__subject_id=subject_id)
+                print(answers , 'answersssssssssssssssssssssssssssssss')
+
+                for answer in answers:
+                    answer_details.append({
+                        'studentId': answer.student_id,
+                        'answer_data': answer.answer_data,
+                        'date': answer.date,
+                        'subject': answer.question.questionpaper.subject.subject,
+                        'department': answer.student.department.department,
+                     
+                    })
+
+                print(answer_details,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
+            return JsonResponse(answer_details, safe=False)
+
+        except Teacher.DoesNotExist:
+            return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(str(e),"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr") 
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class Evaluations(APIView):
+
+    def post(self ,request):
+
+        try:
+          data = request.data
+          evaluation_serializer = EvaluationSerializer(data = data)
+          if evaluation_serializer.is_valid():
+            evaluation_serializer.save()
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+          else:
+              return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
