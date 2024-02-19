@@ -144,6 +144,8 @@ class Blueprint(models.Model):
     total_weightage_section_a = models.CharField(max_length=100)
     total_weightage_section_b = models.CharField(max_length=100)
     total_weightage_section_c = models.CharField(max_length=100)
+
+    total_questions           = models.CharField(max_length = 50 , null = True , blank = True)
     
   
 
