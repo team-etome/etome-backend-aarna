@@ -50,7 +50,10 @@ class StudentExaminationLogin(APIView):
 
                 try:
                     questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_datetime.date())
+                    questionpaper_id=questionpaper.id
                     main_question = Questions.objects.filter(questionpaper=questionpaper).first()
+                    blueprint  = Blueprint.objects.get(question_paper =questionpaper_id )
+                    total_questions = int(blueprint.total_questions)
 
                     if not main_question:
                         return JsonResponse({'error': 'No questions found for the exam'}, status=405)
@@ -68,6 +71,7 @@ class StudentExaminationLogin(APIView):
                         'teacher': questionpaper.teacher.name,
                         'question_id': main_question.id,
                         'question_code': main_question.questioncode,
+                        'total_question':total_questions
                     }
                     question_image = QuestionImage.objects.get(question=main_question)
                     response_data = {
@@ -228,13 +232,33 @@ class EvaluationLogin(APIView):
                 print(answers , 'answersssssssssssssssssssssssssssssss')
 
                 for answer in answers:
+                    question_id = answer.question
+                    print(question_id , "question id ............")
+                    question = QuestionImage.objects.get(question =question_id )
+                    print(question , "questionnnnnnnnnnnnnnn")
+                    question_image = question.image.url
+                    print(question_image  , "question imageeeeeeeee")
+
+                    # questions               =  Questions.objects.get(id = question_id)
+                    questionpaper_id        =  answer.question.questionpaper
+                    blueprint               =  Blueprint.objects.get(question_paper = questionpaper_id)
+
+                    total_questions = int(blueprint.total_questions)
+
+                    print(total_questions , "totalllllllaaaaaaaaaaaaaaaaa")
+
+
+
                     answer_details.append({
+
                         'studentId': answer.student_id,
                         'answer_data': answer.answer_data,
                         'date': answer.date,
                         'subject': answer.question.questionpaper.subject.subject,
                         'department': answer.student.department.department,
-                     
+                        'question_image' : question_image , 
+                        'total_questions' :total_questions, 
+                        
                     })
 
                 print(answer_details,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")

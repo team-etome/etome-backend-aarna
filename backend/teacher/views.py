@@ -67,14 +67,18 @@ class TeacherDetails(APIView):
 class AssignBlueprint(APIView):
 
     def post(self , request):
-
         data = request.data
+        subject_name = data.get('subject')
+        teacher_name = data.get('teacher')
+        print(subject_name , teacher_name,"fffffffffffff")
+        if QuestionPaper.objects.filter(subject=subject_name).exists():
+            return JsonResponse({'error': 'A blueprint with the same subject already exists'}, status=404)
+        if QuestionPaper.objects.filter(teacher=teacher_name).exists():
+            return JsonResponse({'error': 'A blueprint with the same teacher already exists'}, status=403)
         questionpaper_serializer  = QuestionPaperSerializer(data = data)
         if questionpaper_serializer.is_valid():
             questionpaper_serializer.save(status='assigned')
-
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-        
         else:
             return JsonResponse(questionpaper_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
@@ -123,51 +127,6 @@ class BlueprintDetailView(APIView):
             return JsonResponse({'error': f"An error occurred: {e}"}, status=500)        
 
 
-# class TeacherLoginView(APIView):
-
-
-#     def post(self, request, *args, **kwargs):
-#         email = request.data.get('email')
-#         password = request.data.get('password')
-
-#         try:
-#           teacher = Teacher.objects.get(email=email)
-#           teacher_id = teacher.id
-#         except Teacher.DoesNotExist:
-#                     return JsonResponse({'error': 'Invalid email or password'}, status=401)
-
-#         if teacher is not None and check_password(password, teacher.password):
-#             teacher_token = get_token(teacher, user_type='teacher')
-            
-#             try:
-#                 qpapers_assigned = QuestionPaper.objects.filter(teacher_id=teacher_id)
-#                 qpapers_details = []
-#                 for qpaper_assigned in qpapers_assigned:
-#                     qpaper_details = {
-#                         'id': qpaper_assigned.id,
-#                         'examName': qpaper_assigned.exam_name,
-#                         'department': qpaper_assigned.department.department,
-#                         'subject': qpaper_assigned.subject.subject,
-#                         'semester': qpaper_assigned.semester,
-#                         'total_time': qpaper_assigned.total_time,
-#                         'exam_date': qpaper_assigned.exam_date,
-#                         'vetTeacher1': qpaper_assigned.teacher.name,
-#                         'teacherid': qpaper_assigned.teacher.id,
-#                         'term': qpaper_assigned.term,
-#                         'status': qpaper_assigned.status,
-#                     }
-#                     qpapers_details.append(qpaper_details)
-
-#                 response_data = {
-#                     'message': 'Login successful',
-#                     'token': teacher_token,
-#                     'qpaper_details': qpapers_details
-#                 }
-#                 return JsonResponse(response_data)
-#             except QuestionPaper.DoesNotExist:
-#                 return JsonResponse({'message': 'Login successful', 'token': teacher_token})
-#         else:
-#             return JsonResponse({'error': 'Invalid credentials'}, status=401)
 class TeacherLoginView(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -196,7 +155,7 @@ class TeacherLoginView(APIView):
                         'department': qpaper_assigned.department.department,
                         'subject': qpaper_assigned.subject.subject,
                         'semester': qpaper_assigned.semester,
-                        'total_time': qpaper_assigned.total_time,
+                        # 'total_time': qpaper_assigned.total_time,
                         'exam_date': qpaper_assigned.exam_date,
                         'vetTeacher1': qpaper_assigned.teacher.name,
                         'teacherid'  : qpaper_assigned.teacher.id,
@@ -216,8 +175,18 @@ class QpaperModule(APIView):
     def post(self, request, *args, **kwargs):
         try: 
                 data = request.data
-                blueprintSerializer = BlueprintSerializer(data = data)
+                total_questions_section_a = int(data.get("total_questions_section_a", 0))
+                total_questions_section_b = int(data.get("total_questions_section_b", 0))
+                total_questions_section_c = int(data.get("total_questions_section_c", 0))
+                total_questions = total_questions_section_a + total_questions_section_b + total_questions_section_c
 
+                print(total_questions_section_a,total_questions_section_b,total_questions_section_c,"section a b and c")
+
+                print(total_questions , "total questions")
+
+                blueprintSerializer = BlueprintSerializer(data = data)
+                print(blueprintSerializer,"blueeeeeeeeeeeeeeeeeeeeeeeeee")
+                data['total_questions'] = str(total_questions)
                 if blueprintSerializer.is_valid():
                     
                     blueprint_instance = blueprintSerializer.save()
@@ -228,6 +197,7 @@ class QpaperModule(APIView):
 
                 return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         except:
+            print(blueprintSerializer.errors,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
             return JsonResponse(blueprintSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
@@ -261,7 +231,7 @@ class QpaperModule(APIView):
                 department=question_paper.department,
                 subject_id=question_paper.subject_id,
                 exam_date=question_paper.exam_date,
-                exam_time=question_paper.total_time
+                # exam_time=question_paper.total_time
             )
             return JsonResponse(data={},status=status.HTTP_200_OK)
         elif status_action == "decline":
