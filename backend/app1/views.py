@@ -170,10 +170,11 @@ class AddSubject(APIView):
         data = request.data
         name = data.get('subject')
         code = data.get('subject_code')
+        department=data.get('department')
 
-        if Subject.objects.filter(subject=name).exists():
+        if Subject.objects.filter(subject=name, department=department).exists():
             return JsonResponse({'error':'a subject with same name already exists'},status=status.HTTP_400_BAD_REQUEST)
-        if Subject.objects.filter(subject_code=code).exists():
+        if Subject.objects.filter(subject_code=code, department=department).exists():
             return JsonResponse({'error':'a subject with the code already exists'},status=status.HTTP_400_BAD_REQUEST)       
         subject_Serializer = SubjectSerializer(data = data)
         if subject_Serializer.is_valid():

@@ -47,6 +47,7 @@ class BlueprintSerializer(serializers.ModelSerializer):
             'total_weightage_section_a',
             'total_weightage_section_b',
             'total_weightage_section_c',
+            'total_questions',
         ]  
 
 
