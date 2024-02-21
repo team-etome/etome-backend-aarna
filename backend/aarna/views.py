@@ -81,6 +81,8 @@ class EvaluationAssign(APIView):
             return JsonResponse("Department not found", status=404)
         except Subject.DoesNotExist:
             return JsonResponse("Subject not found", status=404)
+        
+
     def get(self, request, *args, **kwargs):
         # Optional: Retrieve query parameters for filtering
         department_id = request.query_params.get('department_id')
@@ -103,7 +105,7 @@ class EvaluationAssign(APIView):
                 evaluation_data.append({
                     'department': evaluation.department.department,
                     'semester': evaluation.semester,
-                    'subject': evaluation.subject.subject_name,
+                    'subject': evaluation.subject.subject,
                     'teacher': evaluation.teacher.name if evaluation.teacher else None,
                     'endDate': evaluation.endDate,
                     'term': evaluation.term,
