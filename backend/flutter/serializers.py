@@ -53,4 +53,5 @@ class AssignEvaluationSerializer(serializers.ModelSerializer):
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
-        fields = ['answer','mark_data','total_mark','date','question_code']
+        fields = ['answer','mark_data','total_mark','teacher','date','question_code']
+

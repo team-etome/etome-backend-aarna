@@ -11,3 +11,11 @@ class TimeTable(models.Model):
     exam_time          =   models.CharField(max_length = 30)
     
 
+class Attendance(models.Model):
+
+    sign_data = models.BinaryField()  
+    student=models.ForeignKey(Student,on_delete=models.CASCADE)
+
+    # created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the sign was created
+
+    
