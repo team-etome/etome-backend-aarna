@@ -53,7 +53,9 @@ class StudentExaminationLogin(APIView):
                     questionpaper_id=questionpaper.id
                     main_question = Questions.objects.filter(questionpaper=questionpaper).first()
                     blueprint  = Blueprint.objects.get(question_paper =questionpaper_id )
+                    print(blueprint.total_questions)
                     total_questions = int(blueprint.total_questions)
+
 
                     if not main_question:
                         return JsonResponse({'error': 'No questions found for the exam'}, status=405)
@@ -209,36 +211,47 @@ class EvaluationLogin(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
+        print(email,password,".........................")
 
 
         try:
             teacher = Teacher.objects.get(email=email)
+            print(teacher)
             if not check_password(password, teacher.password):
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
             assigned_evaluations = AssignEvaluation.objects.filter(teacher=teacher)
+            print(assigned_evaluations)
+            if not assigned_evaluations:
+             return JsonResponse({'error': 'No assigned evaluations'}, status=status.HTTP_404_NOT_FOUND)
             answer_details = []
+            
 
             for evaluation in assigned_evaluations:
                
                 student_roll_nos = json.loads(evaluation.students)
+                if not student_roll_nos:
+                 return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
                 subject_id = evaluation.subject
    
                 students = Student.objects.filter(roll_no__in=student_roll_nos)
+                if not students:
+                 return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
                 student_ids = students.values_list('id', flat=True)
 
                 answers = Answer.objects.filter(student_id__in=student_ids, question__questionpaper__subject_id=subject_id)
-            
+
+                if not answers:
+                 return JsonResponse({'error': 'No answers found'}, status=status.HTTP_404_NOT_FOUND)
+                print(answers , 'answersssssssssssssssssssssssssssssss')
+
 
                 for answer in answers:
                     question_id = answer.question
                     question = QuestionImage.objects.get(question =question_id )
                     question_image = question.image.url
-          
-
                     questionpaper_id        =  answer.question.questionpaper
                     blueprint               =  Blueprint.objects.get(question_paper = questionpaper_id)
-
                     total_questions = int(blueprint.total_questions)
 
 
@@ -252,16 +265,26 @@ class EvaluationLogin(APIView):
                         'subject': answer.question.questionpaper.subject.subject,
                         'department': answer.student.department.department,
                         'question_image' : question_image , 
-                        'total_questions' :total_questions, 
+                        'total_questions' :total_questions,
+                        'question_code':answer.question.questioncode,
+                        'teacherid':answer.question.questionpaper.teacher_id,
                         
                     })
 
-                
+                if not answer_details:
+                 return JsonResponse({'error': 'No students found, no assigned evaluations, or no answers present'}, status=status.HTTP_404_NOT_FOUND)
+                print(answer_details,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
 
             return JsonResponse(answer_details, safe=False)
 
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+        except AssignEvaluation.DoesNotExist:
+            return JsonResponse({'error': 'no evaluation exists'}, status=403)
+        except Student.DoesNotExist:
+            return JsonResponse({'error': 'no student exists'}, status=401)
+        
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -273,6 +296,7 @@ class Evaluations(APIView):
 
         try:
           data = request.data
+          print(data)
           evaluation_serializer = EvaluationSerializer(data = data)
           if evaluation_serializer.is_valid():
             evaluation_serializer.save()

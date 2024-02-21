@@ -13,6 +13,7 @@ from datetime import datetime
 import copy
 from random import shuffle
 import json
+from datetime import datetime
 
 # from rest_framework.permissions import IsAuthenticated
 
@@ -70,10 +71,11 @@ class AssignBlueprint(APIView):
         data = request.data
         subject_name = data.get('subject')
         teacher_name = data.get('teacher')
+        department=data.get('department')
         print(subject_name , teacher_name,"fffffffffffff")
-        if QuestionPaper.objects.filter(subject=subject_name).exists():
+        if QuestionPaper.objects.filter(subject=subject_name,department=department).exists():
             return JsonResponse({'error': 'A blueprint with the same subject already exists'}, status=404)
-        if QuestionPaper.objects.filter(teacher=teacher_name).exists():
+        if QuestionPaper.objects.filter(teacher=teacher_name,department=department).exists():
             return JsonResponse({'error': 'A blueprint with the same teacher already exists'}, status=403)
         questionpaper_serializer  = QuestionPaperSerializer(data = data)
         if questionpaper_serializer.is_valid():
@@ -144,6 +146,18 @@ class TeacherLoginView(APIView):
             
             try:
                 qpaper_assigned = QuestionPaper.objects.get(teacher_id=teacher_id)
+                start_time = qpaper_assigned.start_time
+                end_time = qpaper_assigned.end_time
+
+                # Calculate the time difference
+                time_difference_seconds = (datetime.combine(datetime.min, end_time) - datetime.combine(datetime.min, start_time)).total_seconds()
+                time_difference_minutes = time_difference_seconds / 60
+
+                print("Time difference in minutes:", time_difference_minutes)
+
+             
+                        
+               
 
 
                 response_data = {
@@ -155,7 +169,7 @@ class TeacherLoginView(APIView):
                         'department': qpaper_assigned.department.department,
                         'subject': qpaper_assigned.subject.subject,
                         'semester': qpaper_assigned.semester,
-                        # 'total_time': qpaper_assigned.total_time,
+                        'time_difference_minutes':time_difference_minutes,
                         'exam_date': qpaper_assigned.exam_date,
                         'vetTeacher1': qpaper_assigned.teacher.name,
                         'teacherid'  : qpaper_assigned.teacher.id,
@@ -163,6 +177,7 @@ class TeacherLoginView(APIView):
                         'status': qpaper_assigned.status,
                     }
                 }
+                print(response_data,"tttttttttttttttttttttttttttttttttt")
                 return JsonResponse(response_data)
             except QuestionPaper.DoesNotExist:
                 return JsonResponse({'message': 'Login successful', 'token': teacher_token})
@@ -185,7 +200,6 @@ class QpaperModule(APIView):
                 print(total_questions , "total questions")
 
                 blueprintSerializer = BlueprintSerializer(data = data)
-                print(blueprintSerializer,"blueeeeeeeeeeeeeeeeeeeeeeeeee")
                 data['total_questions'] = str(total_questions)
                 if blueprintSerializer.is_valid():
                     
@@ -231,7 +245,7 @@ class QpaperModule(APIView):
                 department=question_paper.department,
                 subject_id=question_paper.subject_id,
                 exam_date=question_paper.exam_date,
-                # exam_time=question_paper.total_time
+              
             )
             return JsonResponse(data={},status=status.HTTP_200_OK)
         elif status_action == "decline":
@@ -327,12 +341,24 @@ class SeatingArrangementView(APIView):
         data = request.data
         pattern_type = data.get('seating_layout')
         pattern      = data.get('pattern')
+        teacher      =data.get('teacher')
+        exam_name    =data.get('exam_name')
+        exam_date=data.get('exam_date')
+        print(exam_name)
         department_ids = [int(id) for id in data.get('departments', [])]
+
+        if SeatingArrangement.objects.filter(teacher_id__in=teacher,exam_date=exam_date).exists():
+                return JsonResponse({'error': 'teacher is already scheduled'}, status=101)
+        if SeatingArrangement.objects.filter(exam_name=exam_name,exam_date=exam_date).exists():
+                return JsonResponse({'error': 'exam seating already done'}, status=102)
+       
+        
 
         try:
          students = Student.objects.filter(department__id__in=department_ids , selected=False)
         except Student.DoesNotExist:
             return JsonResponse("Student not found")
+        
       
         department_students = {}
         for student in students:
@@ -383,6 +409,8 @@ class SeatingArrangementView(APIView):
 
             selected_student_ids = [student.id for student in students]
             Student.objects.filter(id__in=selected_student_ids).update(selected=True)
+            # if SeatingArrangement.objects.filter(teacher_id=teacher_id).exists():
+            #  return JsonResponse({'error': ' the same teacher already has assigned'}, status=403)
 
 
             
