@@ -63,6 +63,8 @@ class EvaluationAssign(APIView):
             subject = Subject.objects.get(id=subject_id)
             students = Student.objects.filter(department=department).values_list('roll_no', flat=True)
             teachers = Teacher.objects.filter(id__in=data.get('teacher', []))
+            if not  students.exists():
+                return JsonResponse({"error": "No students found"},status=403)
             distributed_papers = self.distribute_papers_to_teachers(teachers, students)
             for teacher, student_roll_numbers in distributed_papers.items():
                 AssignEvaluation.objects.update_or_create(
