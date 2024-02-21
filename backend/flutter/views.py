@@ -245,23 +245,20 @@ class EvaluationLogin(APIView):
                 print(student_ids,"ssssssssssssssssssssssssssssssss")
                 # print(Answer.objects.get( 'question__questionpaper__subject_id'))
                 answers = Answer.objects.filter(student_id__in=student_ids, question__questionpaper__subject_id=subject_id)
-                print(answers)
+
                 if not answers:
                  return JsonResponse({'error': 'No answers found'}, status=status.HTTP_404_NOT_FOUND)
                 print(answers , 'answersssssssssssssssssssssssssssssss')
+
 
                 for answer in answers:
                     question_id = answer.question
                     question = QuestionImage.objects.get(question =question_id )
                     question_image = question.image.url
-
-                    # questions               =  Questions.objects.get(id = question_id)
                     questionpaper_id        =  answer.question.questionpaper
                     blueprint               =  Blueprint.objects.get(question_paper = questionpaper_id)
-
                     total_questions = int(blueprint.total_questions)
 
-                    print(total_questions , "totalllllllaaaaaaaaaaaaaaaaa")
 
 
 
@@ -279,9 +276,11 @@ class EvaluationLogin(APIView):
                         'teacherid':teacher_id,
                         
                     })
+
                 if not answer_details:
                  return JsonResponse({'error': 'No students found, no assigned evaluations, or no answers present'}, status=status.HTTP_404_NOT_FOUND)
                 print(answer_details,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
 
             return JsonResponse(answer_details, safe=False)
 
@@ -293,7 +292,6 @@ class EvaluationLogin(APIView):
         #     return JsonResponse({'error': 'no student exists'}, status=401)
         
         except Exception as e:
-            print(str(e),"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr") 
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -313,5 +311,32 @@ class Evaluations(APIView):
           else:
               print(evaluation_serializer.errors,"eeeeeeeeeeeeeeeeeeeeeeeee")
               return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        # except Exception as e:
-        #     return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    
+    def get(self, request):
+        evaluations = Evaluation.objects.all().select_related(
+            'answer__student', 
+            'answer__question__questionpaper__subject', 
+            'answer__question__questionpaper__department',
+            'teacher'
+        )
+
+        evaluations_list = []
+
+        for eval in evaluations:
+            evaluations_list.append({
+                'student_name': eval.answer.student.studentName if eval.answer.student else None,
+                'subject_name': eval.answer.question.questionpaper.subject.subject if eval.answer.question.questionpaper.subject else None,
+                'department_name': eval.answer.question.questionpaper.department.department if eval.answer.question.questionpaper.department else None,
+                'teacher_name': eval.teacher.name if eval.teacher else None,
+                'total_mark': eval.total_mark,  # Add total_mark
+                'date': eval.date,
+            })
+
+        return JsonResponse(evaluations_list, safe=False, status=status.HTTP_200_OK)
+
+
