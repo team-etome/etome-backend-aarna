@@ -9,3 +9,8 @@ class TimeTableSerializer(serializers.ModelSerializer):
         model = TimeTable
         fields = ['exam_name','department','subject','exam_date','exam_time']
 
+class AttendanceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model=Attendance
+        fields=['sign_data','present']

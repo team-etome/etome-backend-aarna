@@ -198,6 +198,9 @@ class InvgilatorLogin(APIView):
        
         try:
             teacher = Teacher.objects.get(email=email)
+            teacher_id=teacher.id
+            seating=SeatingArrangement.objects.get(teacher_id=teacher_id)
+            seating_id=seating.id
             if not check_password(password, teacher.password):
                 raise ValueError("Invalid credentials")
         except Teacher.DoesNotExist:
@@ -237,6 +240,8 @@ class InvgilatorLogin(APIView):
                 'start_time' : start_time_str,
                 'end_time' : end_time_str ,
                 'images': images,
+                'seating_id':seating_id,
+
             })
         if not seating_arrangement_details :
             return JsonResponse({'error': 'Login cannot proceed due to missing seating arrangements '}, status=403)
@@ -251,6 +256,20 @@ class InvgilatorLogin(APIView):
             }
             return JsonResponse(response_data, status=200)
         
+
+
+class ProcessSignInView(APIView):
+    def post(self, request, *args, **kwargs):
+        sign_data = request.POST.get('sign_data')
+
+       
+        sign_instance = Attendance.objects.create(
+            sign_data=sign_data
+            )
+
+        return JsonResponse({'message': 'Sign processed successfully'}, status=200)
+       
+    
 
         
 

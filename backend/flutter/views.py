@@ -216,6 +216,7 @@ class EvaluationLogin(APIView):
 
         try:
             teacher = Teacher.objects.get(email=email)
+            teacher_id=teacher.id
             print(teacher)
             if not check_password(password, teacher.password):
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -230,16 +231,21 @@ class EvaluationLogin(APIView):
             for evaluation in assigned_evaluations:
                
                 student_roll_nos = json.loads(evaluation.students)
+                print(student_roll_nos)
                 if not student_roll_nos:
-                 return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
+                 return JsonResponse({'error': 'No students found'}, status=403)
                 subject_id = evaluation.subject
+                print(subject_id)
    
                 students = Student.objects.filter(roll_no__in=student_roll_nos)
-                if not students:
-                 return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
+                print(students)
+                # if not students:
+                #  return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
                 student_ids = students.values_list('id', flat=True)
-
+                print(student_ids,"ssssssssssssssssssssssssssssssss")
+                # print(Answer.objects.get( 'question__questionpaper__subject_id'))
                 answers = Answer.objects.filter(student_id__in=student_ids, question__questionpaper__subject_id=subject_id)
+                print(answers)
                 if not answers:
                  return JsonResponse({'error': 'No answers found'}, status=status.HTTP_404_NOT_FOUND)
                 print(answers , 'answersssssssssssssssssssssssssssssss')
@@ -262,6 +268,7 @@ class EvaluationLogin(APIView):
                     answer_details.append({
 
                         'studentId': answer.student_id,
+                        'answer_id':answer.id,
                         'answer_data': answer.answer_data,
                         'date': answer.date,
                         'subject': answer.question.questionpaper.subject.subject,
@@ -269,7 +276,7 @@ class EvaluationLogin(APIView):
                         'question_image' : question_image , 
                         'total_questions' :total_questions,
                         'question_code':answer.question.questioncode,
-                        'teacherid':answer.question.questionpaper.teacher_id,
+                        'teacherid':teacher_id,
                         
                     })
                 if not answer_details:
@@ -280,10 +287,10 @@ class EvaluationLogin(APIView):
 
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
-        except AssignEvaluation.DoesNotExist:
-            return JsonResponse({'error': 'no evaluation exists'}, status=403)
-        except Student.DoesNotExist:
-            return JsonResponse({'error': 'no student exists'}, status=401)
+        # except AssignEvaluation.DoesNotExist:
+        #     return JsonResponse({'error': 'no evaluation exists'}, status=403)
+        # except Student.DoesNotExist:
+        #     return JsonResponse({'error': 'no student exists'}, status=401)
         
         except Exception as e:
             print(str(e),"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr") 
@@ -295,14 +302,16 @@ class Evaluations(APIView):
 
     def post(self ,request):
 
-        try:
+        # try:
           data = request.data
-          print(data)
+          answer_id=type(request.data.get('answer'))
+          print(data,answer_id,"aaaaaaaaaaaaaaaaaaaaaaaaaaa")
           evaluation_serializer = EvaluationSerializer(data = data)
           if evaluation_serializer.is_valid():
             evaluation_serializer.save()
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
           else:
+              print(evaluation_serializer.errors,"eeeeeeeeeeeeeeeeeeeeeeeee")
               return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # except Exception as e:
+        #     return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
