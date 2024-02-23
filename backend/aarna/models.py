@@ -13,9 +13,10 @@ class TimeTable(models.Model):
 
 class Attendance(models.Model):
 
-    sign_data = models.BinaryField()  
-    student=models.ForeignKey(Student,on_delete=models.CASCADE)
+    sign_data     =  models.JSONField()  
+    student       =  models.ForeignKey(Student,on_delete=models.CASCADE)
+    time_table    =  models.ForeignKey(TimeTable , on_delete = models.CASCADE, null = True , blank =True)
 
-    # created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the sign was created
+
 
     
