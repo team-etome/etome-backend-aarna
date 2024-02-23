@@ -6,11 +6,12 @@ from aarna import views
 
 urlpatterns = [ 
 
-    path('api/timetable', views.Timetable.as_view(), name='timetable'),
+    # path('api/timetable', views.Timetable.as_view(), name='timetable'),
     path('api/hallticket', views.HallTicket.as_view(), name='hallticket'),
     path('api/evaluationAssign',views.EvaluationAssign.as_view(),name='evaluationAssign'),
     path('api/Questions',views.QuestionsView.as_view(),name='Questions'),
     path('api/invigilatorLogin',views.InvgilatorLogin.as_view(),name='invigilator'),
+    path('api/attendence',views.Attendanceview.as_view(),name='attendence'),
 
 
 ]

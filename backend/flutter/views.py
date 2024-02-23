@@ -299,8 +299,7 @@ class EvaluationLogin(APIView):
 class Evaluations(APIView):
 
     def post(self ,request):
-
-        # try:
+          
           data = request.data
           answer_id=type(request.data.get('answer'))
           print(data,answer_id,"aaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -312,8 +311,7 @@ class Evaluations(APIView):
               print(evaluation_serializer.errors,"eeeeeeeeeeeeeeeeeeeeeeeee")
               return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+       
         
 
     

@@ -15,28 +15,29 @@ import string
 import base64
 from django.core.files.base import ContentFile
 from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
 
 
 
-class Timetable(APIView):
-    def get(self, request):
-        try:
-            questionpapers = QuestionPaper.objects.all().order_by('exam_date')
-            for questionpaper in questionpapers:
-                try:
-                    TimeTable.objects.create(
-                        exam_name=questionpaper.exam_name,
-                        department=questionpaper.department.department,
-                        subject=questionpaper.subject.subject,
-                        exam_date=questionpaper.exam_date,
-                        # exam_time=questionpaper.total_time,
-                    )
-                except Exception as e:
-                    return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return JsonResponse("Timetable entries created successfully", status=status.HTTP_200_OK)
-        except Exception as e:
-            # Handle broader exceptions or log them
-            return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# class Timetable(APIView):
+#     def get(self, request):
+#         try:
+#             questionpapers = QuestionPaper.objects.all().order_by('exam_date')
+#             for questionpaper in questionpapers:
+#                 try:
+#                     TimeTable.objects.create(
+#                         exam_name=questionpaper.exam_name,
+#                         department=questionpaper.department.department,
+#                         subject=questionpaper.subject.subject,
+#                         exam_date=questionpaper.exam_date,
+                       
+#                     )
+#                 except Exception as e:
+#                     return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             return JsonResponse("Timetable entries created successfully", status=status.HTTP_200_OK)
+#         except Exception as e:
+          
+#             return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class EvaluationAssign(APIView):
@@ -128,17 +129,21 @@ class HallTicket(APIView):
 
             timetable = TimeTable.objects.filter(department_id=student.department_id).order_by('exam_date')
             timetable_serializer = TimeTableSerializer(timetable, many=True)  
+          
 
-            
-            # if TimeTable.DoesNotExist:
-            #     return JsonResponse({"detail": "timetable not found"}, status=403)
-            # else:
             response_data = {
+                
                 'student'         : student_serializer.data,
                 'department_name' : student.department.department,
                 'image_url'       : student.image.url ,
-                'timetable'       : timetable_serializer.data
+                'timetable'       : timetable_serializer.data,
+                'student_id'      : student.id,
+                
+ 
+
             }
+
+        
 
             return JsonResponse(response_data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
@@ -260,20 +265,42 @@ class InvgilatorLogin(APIView):
         
 
 
-class ProcessSignInView(APIView):
+class Attendanceview(APIView):
+    parser_classes = [JSONParser]
+
     def post(self, request, *args, **kwargs):
-        sign_data = request.POST.get('sign_data')
-
-       
-        sign_instance = Attendance.objects.create(
-            sign_data=sign_data
-            )
-
-        return JsonResponse({'message': 'Sign processed successfully'}, status=200)
-       
-    
-
         
+        attendance_records = request.data.get('sign_data', [])
+        if not isinstance(attendance_records , list):
+            return JsonResponse({'error': 'Invalid data format, expected a list.'}, status=400)
+
+        for item in attendance_records :
+            if not isinstance(item, dict):
+                return JsonResponse({'error': 'Invalid item format, expected a dictionary.'}, status=400)
+            
+            try:
+                student_id = item.get('studentId')
+                student_signature = item.get('studentSignature')  
+                time_table_id = item.get('timeTableId')
+
+                student_instance = Student.objects.get(roll_no=student_id)
+                time_table_instance = TimeTable.objects.get(id=time_table_id)
+
+                Attendance.objects.create(
+                    sign_data=student_signature,
+                    student=student_instance,
+                    time_table=time_table_instance
+                )
+
+            except Student.DoesNotExist:
+                return JsonResponse({'error': f'Student with ID {student_id} does not exist.'}, status=400)
+            except TimeTable.DoesNotExist:
+                return JsonResponse({'error': f'TimeTable with ID {time_table_id} does not exist.'}, status=400)
+            except Exception as e:
+                print(e ,"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+                return JsonResponse({'error': str(e)}, status=500)
+
+        return JsonResponse({'message': 'Attendance data stored successfully.'}, status=201)
 
 
 
