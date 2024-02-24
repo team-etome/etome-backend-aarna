@@ -15,7 +15,6 @@ from random import shuffle
 import json
 from datetime import datetime
 
-# from rest_framework.permissions import IsAuthenticated
 
 
 
@@ -72,7 +71,6 @@ class AssignBlueprint(APIView):
         subject_name = data.get('subject')
         teacher_name = data.get('teacher')
         department=data.get('department')
-        print(subject_name , teacher_name,"fffffffffffff")
         if QuestionPaper.objects.filter(subject=subject_name,department=department).exists():
             return JsonResponse({'error': 'A blueprint with the same subject already exists'}, status=404)
         if QuestionPaper.objects.filter(teacher=teacher_name,department=department).exists():
@@ -149,11 +147,9 @@ class TeacherLoginView(APIView):
                 start_time = qpaper_assigned.start_time
                 end_time = qpaper_assigned.end_time
 
-                # Calculate the time difference
                 time_difference_seconds = (datetime.combine(datetime.min, end_time) - datetime.combine(datetime.min, start_time)).total_seconds()
                 time_difference_minutes = time_difference_seconds / 60
 
-                print("Time difference in minutes:", time_difference_minutes)
 
              
                         
@@ -177,7 +173,6 @@ class TeacherLoginView(APIView):
                         'status': qpaper_assigned.status,
                     }
                 }
-                print(response_data,"tttttttttttttttttttttttttttttttttt")
                 return JsonResponse(response_data)
             except QuestionPaper.DoesNotExist:
                 return JsonResponse({'message': 'Login successful', 'token': teacher_token})
@@ -195,9 +190,7 @@ class QpaperModule(APIView):
                 total_questions_section_c = int(data.get("total_questions_section_c", 0))
                 total_questions = total_questions_section_a + total_questions_section_b + total_questions_section_c
 
-                print(total_questions_section_a,total_questions_section_b,total_questions_section_c,"section a b and c")
 
-                print(total_questions , "total questions")
 
                 blueprintSerializer = BlueprintSerializer(data = data)
                 data['total_questions'] = str(total_questions)
@@ -211,7 +204,6 @@ class QpaperModule(APIView):
 
                 return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
         except:
-            print(blueprintSerializer.errors,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
             return JsonResponse(blueprintSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
@@ -344,7 +336,6 @@ class SeatingArrangementView(APIView):
         teacher      =data.get('teacher')
         exam_name    =data.get('exam_name')
         exam_date=data.get('exam_date')
-        print(exam_name)
         department_ids = [int(id) for id in data.get('departments', [])]
 
         if SeatingArrangement.objects.filter(teacher_id__in=teacher,exam_date=exam_date).exists():
@@ -388,7 +379,6 @@ class SeatingArrangementView(APIView):
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
         elif pattern_type == 'sequential':
 
-            # Similarly, clone for the sequential distribution
             cloned_dept_students = copy.deepcopy(department_students)
             seating_arrangement,vacant_seats = self.sequential_distribution(  cols,rows, students_per_bench,department_ids)
             columned_seating_arrangement_json = json.dumps(seating_arrangement)
@@ -409,8 +399,7 @@ class SeatingArrangementView(APIView):
 
             selected_student_ids = [student.id for student in students]
             Student.objects.filter(id__in=selected_student_ids).update(selected=True)
-            # if SeatingArrangement.objects.filter(teacher_id=teacher_id).exists():
-            #  return JsonResponse({'error': ' the same teacher already has assigned'}, status=403)
+           
 
 
             
@@ -436,51 +425,7 @@ class SeatingArrangementView(APIView):
                'term_data'           : term_data,
                'teacher'             : seating.teacher.name
             })
-        #     student_count = sum(len(student_list) for student_list in department_students.values())
-        #     total_student_count += student_count
-        #     department_count = len(department_students)
-        #     total_department_count += department_count
-        #     department_id = list(department_students.keys())[0]
-        #     if department_students:
-        #         department_id = list(department_students.keys())[0]
-        #         department = Department.objects.get(id=department_id)
-        #         department_code = department.department_code
-        #     else:
-        #         department_code = 'N/A'
-        #     department_student_counts = {}
-        #     for seating in seating_arrangements:
-        #         try:
-        #             department_students = json.loads(seating.department_students)
-        #         except json.JSONDecodeError:
-        #             department_students = []
-        #         department_codes = set()
-                # for row in department_students:
-                #     for group in row:
-                #         for seat in group:
-                #             if seat != "Vacant-0":
-                #                 department_code, _ = seat.split("-")[0]
-                #                 department_codes.add(department_code)
-                #                 if department_code not in department_student_counts:
-                #                     department_student_counts[department_code] = 1
-                #                 else:
-                #                     department_student_counts[department_code] += 1
-            # total_departments = len(department_student_counts)
-            # total_student_count = sum(department_student_counts.values())
-            # detail = {
-            #     'hall_name': seating.hall_name,
-            #     'teacher': seating.teacher.name,
-            #     'term_data': term_data,
-            #     'total_departments': total_departments,
-            #      'total_students': total_student_count,
-            #     'department_students' : seating.department_students,
-                #  'department_code'     : department_code
-            #     'department_details': [
-            #     {'department_code': dept_code, 'student_count': count}
-            #     for dept_code, count in department_student_counts.items()
-            # ]
-            # }
-            # print(detail , "detaillllllllllll")
-            # seatingDetails.append(detail)
+        
         return JsonResponse(seatingDetails, safe=False)
         
 
