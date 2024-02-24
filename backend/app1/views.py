@@ -102,6 +102,7 @@ class AddDepartment(APIView):
     def post(self, request):
         try:
             data = request.data
+            print(data , "dataaaaaaaaaaa")
             name = data.get('department')
             code = data.get('department_code')
 
@@ -116,6 +117,7 @@ class AddDepartment(APIView):
                 department_Serializer.save()
                 return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
             else:
+                print(department_Serializer.errors ,"errorssssssssssssssss")
                 return JsonResponse(department_Serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -131,6 +133,7 @@ class AddDepartment(APIView):
                     'departmentName': department.department,
                     'departmentCode': department.department_code,
                     'program': department.program,
+                    'total_sem': department.total_sem
                 })
             return JsonResponse(departmentDetails, safe=False)
         except Exception as e:
@@ -138,6 +141,8 @@ class AddDepartment(APIView):
 
     def put(self, request,pk):
             data = request.data
+
+            print(data ,"dataaaaaaaaaaaaaaa")
             id = data.get('id')
             department = Department.objects.get(id=id)
         
@@ -147,6 +152,8 @@ class AddDepartment(APIView):
                 department.department_code = data['department_code']
             if 'program' in data:
                 department.program = data['program']
+            if 'total_sem' in data:
+                department.total_sem = data['total_sem']
             department.save()
             return JsonResponse({"message": "Department updated successfully"}, status=status.HTTP_200_OK)
        
