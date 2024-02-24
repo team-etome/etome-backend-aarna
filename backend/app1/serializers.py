@@ -33,7 +33,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Department
-        fields = ['department','department_code','program']
+        fields = ['department','department_code','program','total_sem']
 
 
 
