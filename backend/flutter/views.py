@@ -53,7 +53,6 @@ class StudentExaminationLogin(APIView):
                     questionpaper_id=questionpaper.id
                     main_question = Questions.objects.filter(questionpaper=questionpaper).first()
                     blueprint  = Blueprint.objects.get(question_paper =questionpaper_id )
-                    print(blueprint.total_questions)
                     total_questions = int(blueprint.total_questions)
 
 
@@ -83,7 +82,7 @@ class StudentExaminationLogin(APIView):
                     }
                     return JsonResponse(response_data)
                 except QuestionPaper.DoesNotExist:
-                    return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=404)
+                    return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=405)
                 except QuestionImage.DoesNotExist:
                     return JsonResponse({'error': 'Question image not found'}, status=403)
             else:
@@ -111,10 +110,7 @@ class Answers(APIView):
         student_id = request.GET.get('studentId')
         question_code = request.GET.get('question')
 
-        # print(student_id , question_code , "studentsssssssssssssssssssssssssss")
-
-        # if not student_id:
-        #     return JsonResponse({'error': 'Student ID is required'}, status=400)
+       
         
         if not student_id and not question_code:
             answers = Answer.objects.all()
@@ -133,54 +129,12 @@ class Answers(APIView):
             return JsonResponse({'data': answerdetails})
         
         
-        # if not question_code:
-        #     answers = Answer.objects.filter(studentId=student_id)
-        #     answerdetails = [{
-        #         'studentId': answer.student,
-        #         'question': answer.question,
-        #         'date': answer.date,
-        #         'answerData': answer.answer_data,
-        #     } for answer in answers]
-            
-        #     return JsonResponse({'data': answerdetails})
-        # else:
-        #     try:
-        #         answer = Answer.objects.get(studentId=student_id, question=question_code)
-        #         print(answer, 'answer is hereeeee')
-        #         return JsonResponse({'data': answer.answer_data})
-        #     except Answer.DoesNotExist:
-        #         return JsonResponse({'error': 'No matching record found'}, status=404)
+       
         
         
 
    
-    # def get(self , request):
-    #     try:
-
-    #         evaluations = Evaluation.objects.all()
-
-    #         answerdetails = []
-
-    #         for evaluation in evaluations:
-    #             answerdetails.append({
-    #                 'studentId':evaluation.answer.student.studentName ,
-    #                 # 'teacherId':evaluation.teacher,
-    #                 'markData':evaluation.mark_data,
-    #                 'totalMark':evaluation.total_mark,
-    #                 'date':evaluation.date,
-    #                 'subject' : evaluation.answer.question.questionpaper.subject.subject,
-    #                 'department' : evaluation.answer.student.department.department
-    #             })
-            
-
-    #         return JsonResponse(answerdetails, safe=False)
-    #     except Exception as e:
-    #         return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-
-
+    
 class StudentApplicationLogin(APIView):
 
     def post(self , request , *args , **kwargs):
@@ -193,8 +147,7 @@ class StudentApplicationLogin(APIView):
 
             except Student.DoesNotExist:
                 user = None
-            # if user is not None and check_password(password,user.password):
-            #     return JsonResponse({'message': 'Login successful'})
+           
             
             if user is not None :
                 return JsonResponse({'message': 'Login successful'})
@@ -211,18 +164,15 @@ class EvaluationLogin(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        print(email,password,".........................")
 
 
         try:
             teacher = Teacher.objects.get(email=email)
             teacher_id=teacher.id
-            print(teacher)
             if not check_password(password, teacher.password):
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
             assigned_evaluations = AssignEvaluation.objects.filter(teacher=teacher)
-            print(assigned_evaluations)
             if not assigned_evaluations:
              return JsonResponse({'error': 'No assigned evaluations'}, status=status.HTTP_404_NOT_FOUND)
             answer_details = []
@@ -231,24 +181,16 @@ class EvaluationLogin(APIView):
             for evaluation in assigned_evaluations:
                
                 student_roll_nos = json.loads(evaluation.students)
-                print(student_roll_nos)
                 if not student_roll_nos:
-                 return JsonResponse({'error': 'No students found'}, status=403)
+                 return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
                 subject_id = evaluation.subject
-                print(subject_id)
    
                 students = Student.objects.filter(roll_no__in=student_roll_nos)
-                print(students)
-                # if not students:
-                #  return JsonResponse({'error': 'No students found'}, status=status.HTTP_404_NOT_FOUND)
                 student_ids = students.values_list('id', flat=True)
-                print(student_ids,"ssssssssssssssssssssssssssssssss")
-                # print(Answer.objects.get( 'question__questionpaper__subject_id'))
                 answers = Answer.objects.filter(student_id__in=student_ids, question__questionpaper__subject_id=subject_id)
 
                 if not answers:
                  return JsonResponse({'error': 'No answers found'}, status=status.HTTP_404_NOT_FOUND)
-                print(answers , 'answersssssssssssssssssssssssssssssss')
 
 
                 for answer in answers:
@@ -279,17 +221,13 @@ class EvaluationLogin(APIView):
 
                 if not answer_details:
                  return JsonResponse({'error': 'No students found, no assigned evaluations, or no answers present'}, status=status.HTTP_404_NOT_FOUND)
-                print(answer_details,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
 
             return JsonResponse(answer_details, safe=False)
 
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
-        # except AssignEvaluation.DoesNotExist:
-        #     return JsonResponse({'error': 'no evaluation exists'}, status=403)
-        # except Student.DoesNotExist:
-        #     return JsonResponse({'error': 'no student exists'}, status=401)
+        
         
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -302,13 +240,11 @@ class Evaluations(APIView):
           
           data = request.data
           answer_id=type(request.data.get('answer'))
-          print(data,answer_id,"aaaaaaaaaaaaaaaaaaaaaaaaaaa")
           evaluation_serializer = EvaluationSerializer(data = data)
           if evaluation_serializer.is_valid():
             evaluation_serializer.save()
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
           else:
-              print(evaluation_serializer.errors,"eeeeeeeeeeeeeeeeeeeeeeeee")
               return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
        
@@ -331,7 +267,7 @@ class Evaluations(APIView):
                 'subject_name': eval.answer.question.questionpaper.subject.subject if eval.answer.question.questionpaper.subject else None,
                 'department_name': eval.answer.question.questionpaper.department.department if eval.answer.question.questionpaper.department else None,
                 'teacher_name': eval.teacher.name if eval.teacher else None,
-                'total_mark': eval.total_mark,  # Add total_mark
+                'total_mark': eval.total_mark, 
                 'date': eval.date,
             })
 

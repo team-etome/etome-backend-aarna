@@ -16,6 +16,7 @@ import base64
 from django.core.files.base import ContentFile
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
+from datetime import datetime
 
 
 
@@ -45,10 +46,10 @@ class EvaluationAssign(APIView):
         num_teachers = len(teachers)
         assigned_papers = {teacher.id: [] for teacher in teachers}
         all_students = list(students)
-        idx = 0  # Index to iterate over students
+        idx = 0 
         while all_students:
             teacher = teachers[idx % num_teachers]
-            student = all_students.pop(0)  # Get the next student
+            student = all_students.pop(0)  
             assigned_papers[teacher.id].append(student)
             idx += 1
         return assigned_papers
@@ -87,7 +88,6 @@ class EvaluationAssign(APIView):
         
 
     def get(self, request, *args, **kwargs):
-        # Optional: Retrieve query parameters for filtering
         department_id = request.query_params.get('department_id')
         semester = request.query_params.get('semester')
         subject_id = request.query_params.get('subject_id')
@@ -162,32 +162,27 @@ class QuestionsView(APIView):
             answer_image_data = request.POST.get('answerImage')
 
             if not all([question_id, question_image_data, answer_image_data]):
-                # If any of the required parameters are missing
                 return JsonResponse({"success": False, "message": "Missing required parameters."}, status=400)
 
             question_paper = QuestionPaper.objects.get(pk=question_id)
 
-            # Generate a random question code
             question_code = ''.join(random.choices(string.ascii_uppercase, k=3)) + ''.join(random.choices(string.digits, k=5))
 
-            # Create a new Questions object
             question = Questions.objects.create(
                 questionpaper_id=question_id,
                 questioncode=question_code
             )
 
-            # Handling question image
             format, imgstr = question_image_data.split(';base64,')
             ext = format.split('/')[-1]
             question_img = ContentFile(base64.b64decode(imgstr), name='question.' + ext)
             QuestionImage.objects.create(question=question, image=question_img)
             try:
-                # Handling answer image
                 format, imgstr = answer_image_data.split(';base64,')
                 answer_img = ContentFile(base64.b64decode(imgstr), name='answer.' + ext)
                 AnswerImage.objects.create(question=question, image=answer_img)
             except Exception as e:
-                question.delete()  # Rollback if answer image creation fails
+                question.delete()
                 return JsonResponse({"success": False, "message": f"Error saving answer image: {e}"}, status=500)
             return JsonResponse({"success": True, "message": "Question and answer images successfully saved."}, status=200)
 
@@ -202,22 +197,19 @@ class InvgilatorLogin(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-       
+        current_datetime = datetime.now() 
         try:
             teacher = Teacher.objects.get(email=email)
             teacher_id=teacher.id
             seating=SeatingArrangement.objects.get(teacher_id=teacher_id)
             seating_id=seating.id
             if not check_password(password, teacher.password):
-                raise ValueError("Invalid credentials")
+             return JsonResponse({'error': 'Invalid email or password'}, status=401)
         except Teacher.DoesNotExist:
             return JsonResponse({'error': 'Invalid email or password'}, status=401)
-        except ValueError as e:
-            return JsonResponse({'error': str(e)}, status=401)
-        # Generate token for authenticated teacher
         try:
             teacher_token = get_token(teacher, user_type='teacher')
-        except Exception as e:  # Replace Exception with a more specific exception if possible
+        except Exception as e:  
             return JsonResponse({'error': 'Failed to generate token'}, status=500)
         seating_arrangement_details = []
         seating_arrangements = SeatingArrangement.objects.filter(teacher=teacher)
@@ -229,7 +221,7 @@ class InvgilatorLogin(APIView):
         question_paper_details = []
         department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]
         department_ids = [item for sublist in department_ids for item in sublist]
-        question_papers = QuestionPaper.objects.filter(department__id__in=department_ids)
+        question_papers = QuestionPaper.objects.filter(department__id__in=department_ids,exam_date=current_datetime.date())
         for qpaper in question_papers:
             questions = Questions.objects.filter(questionpaper=qpaper)
             question_images = QuestionImage.objects.filter(question__in=questions)
@@ -286,6 +278,8 @@ class Attendanceview(APIView):
                 student_instance = Student.objects.get(roll_no=student_id)
                 time_table_instance = TimeTable.objects.get(id=time_table_id)
 
+                print(student_signature)
+
                 Attendance.objects.create(
                     sign_data=student_signature,
                     student=student_instance,
@@ -297,7 +291,6 @@ class Attendanceview(APIView):
             except TimeTable.DoesNotExist:
                 return JsonResponse({'error': f'TimeTable with ID {time_table_id} does not exist.'}, status=400)
             except Exception as e:
-                print(e ,"errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
                 return JsonResponse({'error': str(e)}, status=500)
 
         return JsonResponse({'message': 'Attendance data stored successfully.'}, status=201)

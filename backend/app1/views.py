@@ -13,7 +13,6 @@ from rest_framework.response import Response
 
 
 
-#Login of God(super user)
 class GodLoginView(APIView):
     
 
@@ -76,23 +75,17 @@ class AddAdmin(APIView):
         try:
             data = request.data
 
-            # Deserialize the request data using AdminSerializer
             admin_serializer = AdminSerializer(data=data)
 
-            # Check if the deserialized data passes validation
             if admin_serializer.is_valid():
-                # If data is valid, save it
                 admin_serializer.save()
-                # Return a success response with status code 201
                 return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
             else:
-                # If data is not valid, return validation errors
                 return JsonResponse(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
 
         except Exception as e:
-            # Handle unexpected exceptions
             return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -164,7 +157,6 @@ class AddDepartment(APIView):
 
 
 
-#Add subject
 class AddSubject(APIView):
     def post(self,request):
         data = request.data
@@ -352,7 +344,6 @@ class SendInvite(APIView):
     
 
 
-#Add Teacher   
 class AddTeacher(APIView):
     def post(self, request):
             data = request.data.copy()
