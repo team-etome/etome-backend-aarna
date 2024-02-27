@@ -34,7 +34,7 @@ class Admin(models.Model):
 
 
 class Department(models.Model):
-    department         =    models.CharField(max_length=50 , unique = True, null=True)
+    department         =    models.CharField(max_length=50 ,  null=True)
     department_code    =    models.CharField(max_length=20,null=True , unique = True)
     program            =    models.CharField(max_length =20, null = True)
     total_sem          =    models.CharField(max_length = 20 , null = True , blank = True)

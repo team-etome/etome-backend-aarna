@@ -56,6 +56,19 @@ class StudentExaminationLogin(APIView):
                     total_questions = int(blueprint.total_questions)
 
 
+                    current_time=current_datetime.time()
+                    start_time=questionpaper.start_time
+                    end_time=questionpaper.end_time
+
+                    if current_time < start_time  :
+                       return JsonResponse({'error': 'exam time out of match'}, status=407)
+                    
+                    if current_time > end_time:
+                       return JsonResponse({'error': 'exam time out of match'}, status=408)
+
+                    
+
+
                     if not main_question:
                         return JsonResponse({'error': 'No questions found for the exam'}, status=405)
 
@@ -222,7 +235,6 @@ class EvaluationLogin(APIView):
                 if not answer_details:
                  return JsonResponse({'error': 'No students found, no assigned evaluations, or no answers present'}, status=status.HTTP_404_NOT_FOUND)
 
-
             return JsonResponse(answer_details, safe=False)
 
         except Teacher.DoesNotExist:
@@ -239,12 +251,12 @@ class Evaluations(APIView):
     def post(self ,request):
           
           data = request.data
-          answer_id=type(request.data.get('answer'))
           evaluation_serializer = EvaluationSerializer(data = data)
           if evaluation_serializer.is_valid():
             evaluation_serializer.save()
             return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
           else:
+              print(evaluation_serializer.errors)
               return JsonResponse(evaluation_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
        
@@ -273,4 +285,37 @@ class Evaluations(APIView):
 
         return JsonResponse(evaluations_list, safe=False, status=status.HTTP_200_OK)
 
+    def put(self, request,pk):
+            data = request.data
+
+            print(data ,"dataaaaaaaaaaaaaaa")
+            id = data.get('id')
+            evaluation = AssignEvaluation.objects.get(id=id)
+        
+            if 'department' in data:
+                evaluation.department = data['department']
+            if 'semester' in data:
+                evaluation.semester = data['semester']
+            if 'subject' in data:
+                evaluation.subject = data['subject']
+            if 'teacher' in data:
+                evaluation.teacher = data['teacher']
+            if 'endDate' in data:
+                evaluation.endDate = data['endDate']
+            if 'term' in data:
+                evaluation.term = data['term']
+            if 'students' in data:
+                evaluation.students = data['students']
+            evaluation.save()
+            return JsonResponse({"message": "evaluation updated successfully"}, status=status.HTTP_200_OK)
+       
+
+
+    def delete(self, request, pk):
+        try:
+            evaluation = AssignEvaluation.objects.get(id=pk)
+            evaluation.delete()
+            return JsonResponse(status=status.HTTP_204_NO_CONTENT)
+        except AssignEvaluation.DoesNotExist:
+            return JsonResponse(status=status.HTTP_404_NOT_FOUND)
 
