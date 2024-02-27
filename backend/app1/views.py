@@ -98,8 +98,9 @@ class AddDepartment(APIView):
             print(data , "dataaaaaaaaaaa")
             name = data.get('department')
             code = data.get('department_code')
+            program=data.get('program')
 
-            if Department.objects.filter(department=name).exists():
+            if Department.objects.filter(department=name,program=program).exists():
                 return JsonResponse({'error': 'A department with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
             
             if Department.objects.filter(department_code=code).exists():

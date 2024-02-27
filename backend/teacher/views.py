@@ -71,9 +71,10 @@ class AssignBlueprint(APIView):
         subject_name = data.get('subject')
         teacher_name = data.get('teacher')
         department=data.get('department')
-        if QuestionPaper.objects.filter(subject=subject_name,department=department).exists():
+        date=data.get('exam_date')
+        if QuestionPaper.objects.filter(subject=subject_name,department=department,exam_date=date).exists():
             return JsonResponse({'error': 'A blueprint with the same subject already exists'}, status=404)
-        if QuestionPaper.objects.filter(teacher=teacher_name,department=department).exists():
+        if QuestionPaper.objects.filter(teacher=teacher_name,department=department,exam_date=date).exists():
             return JsonResponse({'error': 'A blueprint with the same teacher already exists'}, status=403)
         questionpaper_serializer  = QuestionPaperSerializer(data = data)
         if questionpaper_serializer.is_valid():
@@ -180,6 +181,7 @@ class TeacherLoginView(APIView):
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
 
+
 class QpaperModule(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -189,8 +191,6 @@ class QpaperModule(APIView):
                 total_questions_section_b = int(data.get("total_questions_section_b", 0))
                 total_questions_section_c = int(data.get("total_questions_section_c", 0))
                 total_questions = total_questions_section_a + total_questions_section_b + total_questions_section_c
-
-
 
                 blueprintSerializer = BlueprintSerializer(data = data)
                 data['total_questions'] = str(total_questions)
@@ -219,6 +219,7 @@ class QpaperModule(APIView):
             return JsonResponse({"detail": "Blueprint not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return JsonResponse({'error': f"An error occurred: {e}"}, status=500)
+    
 
     def put(self, request, qpaperid):
         try:
@@ -245,7 +246,7 @@ class QpaperModule(APIView):
             question_paper.save()
 
             Blueprint.objects.filter(question_paper=qpaperid).delete()
-            return JsonResponse(status=status.HTTP_200_OK)
+            return JsonResponse({'message':'error'},status=status.HTTP_200_OK)
         else:
             return JsonResponse({"error": "Invalid status_action value"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -335,13 +336,17 @@ class SeatingArrangementView(APIView):
         pattern      = data.get('pattern')
         teacher      =data.get('teacher')
         exam_name    =data.get('exam_name')
-        exam_date=data.get('exam_date')
+
+
+        hall_name=data.get('hallName')
         department_ids = [int(id) for id in data.get('departments', [])]
 
         if SeatingArrangement.objects.filter(teacher_id__in=teacher,exam_date=exam_date).exists():
                 return JsonResponse({'error': 'teacher is already scheduled'}, status=101)
         if SeatingArrangement.objects.filter(exam_name=exam_name,exam_date=exam_date).exists():
                 return JsonResponse({'error': 'exam seating already done'}, status=102)
+        if SeatingArrangement.objects.filter(hall_name=hall_name,exam_date=exam_date).exists():
+                return JsonResponse({'error': 'seating for this hall already done'}, status=103)
        
         
 
@@ -363,7 +368,7 @@ class SeatingArrangementView(APIView):
         teacher_id = data.get('teacher')
         exam_name = data.get('exam_name')
         exam_date = data.get('exam_date')
-        exam_time = data.get('exam_time')
+        # exam_time = data.get('exam_time')
         seating_layout = data.get('seating_layout')
         teacher_id = data.get('teacher')[0] if data.get('teacher') else None
 
@@ -389,9 +394,9 @@ class SeatingArrangementView(APIView):
                 pattern=pattern,
                 hall_name=hall_name,
                 teacher_id=teacher_id,
-                exam_name=exam_name,
+                # exam_name=exam_name,
                 exam_date=exam_date_obj,
-                exam_time=exam_time,
+                # exam_time=exam_time,
                 seating_layout=seating_layout,
                 department_students=columned_seating_arrangement_json,
                 department_ids=json.dumps(department_ids)
@@ -413,6 +418,7 @@ class SeatingArrangementView(APIView):
         seating_arrangements = SeatingArrangement.objects.all().order_by('id')
         exam_names = [seating.exam_name for seating in seating_arrangements]
         question_papers = QuestionPaper.objects.filter(exam_name__in=exam_names)
+
         term_data = set(paper.term for paper in question_papers)
         term_data = list(term_data)
         seatingDetails = []
@@ -427,6 +433,42 @@ class SeatingArrangementView(APIView):
             })
         
         return JsonResponse(seatingDetails, safe=False)
+    
+    def put(self, request,pk):
+            data = request.data
+
+            print(data ,"dataaaaaaaaaaaaaaa")
+            id = data.get('id')
+            seating = SeatingArrangement.objects.get(id=id)
+        
+            if 'pattern' in data:
+                seating.pattern = data['pattern']
+            if 'hall_name' in data:
+                seating.hall_name = data['hall_name']
+            if 'teacher' in data:
+                seating.teacher = data['teacher']
+            if 'seating_layout' in data:
+                seating.seating_layout = data['seating_layout']
+            if 'department_students' in data:
+                seating.department_students = data['department_students']
+            if 'department_ids' in data:
+                seating.department_ids = data['department_ids']
+            if 'exam_date' in data:
+                seating.exam_date = data['exam_date']
+            seating.save()
+            return JsonResponse({"message": "seating updated successfully"}, status=status.HTTP_200_OK)
+       
+
+
+    def delete(self, request, pk):
+        try:
+            seating = SeatingArrangement.objects.get(id=pk)
+            seating.delete()
+            return JsonResponse(status=status.HTTP_204_NO_CONTENT)
+        except SeatingArrangement.DoesNotExist:
+            return JsonResponse(status=status.HTTP_404_NOT_FOUND)
+
+
         
 
         
