@@ -317,7 +317,7 @@ class SendInvite(APIView):
             <img src="cid:etome_logo" alt="Etome Logo">
             <p>In collaboration with [School Name]</p>
             <p>We're thrilled to have you join our community of dedicated educators. As a member, you'll have access to exclusive resources, networking opportunities, and the latest insights in education.</p>
-            <a href="http://localhost:5173/tregister">Join Now</a>
+            <a href="https://main.dnepaskvc6y9m.amplifyapp.com/tregister">Join Now</a>
             <p>If you have any questions, feel free to contact us at any time.</p>
             <p>Best Regards,<br>Team Etome</p>
         </div>
@@ -355,10 +355,13 @@ class SendInvite(APIView):
 class AddTeacher(APIView):
     def post(self, request):
             data = request.data.copy()
+            print(data , "dataaaaaaaaaaaaaaa")
             department_ids = data.get('department_id')
             subject_ids = data.get('subject_id')
+            print(subject_ids,"sssssssssssss")
             phone=data.get('phoneNumber')
             email=data.get('email')
+
             if Teacher.objects.filter(phoneNumber=phone).exists():
                 return JsonResponse({'error': ' Phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -383,7 +386,7 @@ class AddTeacher(APIView):
             teacher_serializer = TeacherSerializer(data=data)
             if teacher_serializer.is_valid():
                 teacher = teacher_serializer.save()
-                image_url = teacher.image.url
+              
 
                 return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
             else:
@@ -397,6 +400,7 @@ class AddTeacher(APIView):
 
                 return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
             else:
+                print(teacher_serializer.errors , "errorssssssssssssssssssss")
                 return JsonResponse(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         
