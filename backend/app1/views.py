@@ -386,18 +386,6 @@ class AddTeacher(APIView):
             teacher_serializer = TeacherSerializer(data=data)
             if teacher_serializer.is_valid():
                 teacher = teacher_serializer.save()
-              
-
-                return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
-            else:
-                subject_ids = [int(subject_ids)]
-            data.setlist('subjects', subject_ids)
-
-            teacher_serializer = TeacherSerializer(data=data)
-            if teacher_serializer.is_valid():
-                teacher = teacher_serializer.save()
-                image_url = teacher.image.url
-
                 return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
             else:
                 print(teacher_serializer.errors , "errorssssssssssssssssssss")
