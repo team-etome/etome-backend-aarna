@@ -84,81 +84,81 @@ class UploadExcelStudent(APIView):
 
 
    
-class StudentExaminationLogin(APIView):
-    def post(self, request, *args, **kwargs):
-        roll_no = request.data.get('roll_no')
-        password = request.data.get('password')
+# class StudentExaminationLogin(APIView):
+#     def post(self, request, *args, **kwargs):
+#         roll_no = request.data.get('roll_no')
+#         password = request.data.get('password')
         
        
-        try:
-            user = Student.objects.get(roll_no=roll_no)
-        except Student.DoesNotExist:
-            return JsonResponse({'error': 'Student not found'}, status=409)
-        current_date = datetime.now().date()
+#         try:
+#             user = Student.objects.get(roll_no=roll_no)
+#         except Student.DoesNotExist:
+#             return JsonResponse({'error': 'Student not found'}, status=409)
+#         current_date = datetime.now().date()
 
-        current_time = datetime.now().time()
-        department=user.department_id
-        student_id=user.id
-        questions=QuestionPaper.objects.filter(department_id=department,exam_date=current_date)
+#         current_time = datetime.now().time()
+#         department=user.department_id
+#         student_id=user.id
+#         questions=QuestionPaper.objects.filter(department_id=department,exam_date=current_date)
 
-        for question in questions:
-         if current_time >= question.start_time and current_time <= question.end_time:                
-            if Answer.objects.filter(student_id=student_id,question_id=question.id).exists():
-                    print("enteredddddddddddddddddddd already written the exam")
-                    return JsonResponse({'error': 'Student already written the exam'}, status=404)
+#         for question in questions:
+#          if current_time >= question.start_time and current_time <= question.end_time:                
+#             if Answer.objects.filter(student_id=student_id,question_id=question.id).exists():
+#                     print("enteredddddddddddddddddddd already written the exam")
+#                     return JsonResponse({'error': 'Student already written the exam'}, status=404)
 
 
-        if user is not None and check_password(password, user.password):
-            current_datetime = datetime.now()
-            department_id = user.department_id
+#         if user is not None and check_password(password, user.password):
+#             current_datetime = datetime.now()
+#             department_id = user.department_id
 
-            try:
-                questionpapers = QuestionPaper.objects.filter(department_id=department_id, exam_date=current_datetime.date())
+#             try:
+#                 questionpapers = QuestionPaper.objects.filter(department_id=department_id, exam_date=current_datetime.date())
 
-                questionpaper = None
-                for qp in questionpapers:
-                    if qp.start_time <= current_datetime.time() <= qp.end_time:
-                        questionpaper = qp
-                        break
+#                 questionpaper = None
+#                 for qp in questionpapers:
+#                     if qp.start_time <= current_datetime.time() <= qp.end_time:
+#                         questionpaper = qp
+#                         break
 
-                if questionpaper is None:
-                    return JsonResponse({'error': 'No exam scheduled for now or for this department'}, status=405)
+#                 if questionpaper is None:
+#                     return JsonResponse({'error': 'No exam scheduled for now or for this department'}, status=405)
 
-                questionpaper_id = questionpaper.id
-                main_question = Questions.objects.filter(questionpaper=questionpaper).first()
-                blueprint = Blueprint.objects.get(question_paper=questionpaper_id)
-                total_questions = int(blueprint.total_questions)
+#                 questionpaper_id = questionpaper.id
+#                 main_question = Questions.objects.filter(questionpaper=questionpaper).first()
+#                 blueprint = Blueprint.objects.get(question_paper=questionpaper_id)
+#                 total_questions = int(blueprint.total_questions)
 
-                exam_end_datetime = datetime.combine(current_datetime.date(), questionpaper.end_time)
-                remaining_time = round((exam_end_datetime - current_datetime).total_seconds() / 60)
-                question_paper_details = {
-                    'student_id': user.id,
-                    'exam_name': questionpaper.exam_name,
-                    'total_time': remaining_time,
-                    'semester': questionpaper.semester,
-                    'department': questionpaper.department.department,
-                    'subject': questionpaper.subject.subject,
-                    'subject_code': questionpaper.subject.subject_code,
-                    'teacher': questionpaper.teacher.name,
-                    'question_id': main_question.id,
-                    'question_code': main_question.questioncode,
-                    'total_question': total_questions
-                }
+#                 exam_end_datetime = datetime.combine(current_datetime.date(), questionpaper.end_time)
+#                 remaining_time = round((exam_end_datetime - current_datetime).total_seconds() / 60)
+#                 question_paper_details = {
+#                     'student_id': user.id,
+#                     'exam_name': questionpaper.exam_name,
+#                     'total_time': remaining_time,
+#                     'semester': questionpaper.semester,
+#                     'department': questionpaper.department.department,
+#                     'subject': questionpaper.subject.subject,
+#                     'subject_code': questionpaper.subject.subject_code,
+#                     'teacher': questionpaper.teacher.name,
+#                     'question_id': main_question.id,
+#                     'question_code': main_question.questioncode,
+#                     'total_question': total_questions
+#                 }
 
-                question_image = QuestionImage.objects.get(question=main_question)
-                response_data = {
-                    'message': 'Login successful',
-                    'question_paper_details': question_paper_details,
-                    'q_image': question_image.image.url
-                }
+#                 question_image = QuestionImage.objects.get(question=main_question)
+#                 response_data = {
+#                     'message': 'Login successful',
+#                     'question_paper_details': question_paper_details,
+#                     'q_image': question_image.image.url
+#                 }
             
-                return JsonResponse(response_data)
-            except QuestionPaper.DoesNotExist:
-                return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=405)
-            except QuestionImage.DoesNotExist:
-                return JsonResponse({'error': 'Question image not found'}, status=403)
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+#                 return JsonResponse(response_data)
+#             except QuestionPaper.DoesNotExist:
+#                 return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=405)
+#             except QuestionImage.DoesNotExist:
+#                 return JsonResponse({'error': 'Question image not found'}, status=403)
+#         else:
+#             return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
 
         
