@@ -100,11 +100,12 @@ class StudentExaminationLogin(APIView):
         department=user.department_id
         student_id=user.id
         questions=QuestionPaper.objects.filter(department_id=department,exam_date=current_date)
+
         for question in questions:
          if current_time >= question.start_time and current_time <= question.end_time:                
             if Answer.objects.filter(student_id=student_id,question_id=question.id).exists():
+                    print("enteredddddddddddddddddddd already written the exam")
                     return JsonResponse({'error': 'Student already written the exam'}, status=404)
-        
 
 
         if user is not None and check_password(password, user.password):
@@ -112,10 +113,8 @@ class StudentExaminationLogin(APIView):
             department_id = user.department_id
 
             try:
-                # Get all question papers for the department and current date
                 questionpapers = QuestionPaper.objects.filter(department_id=department_id, exam_date=current_datetime.date())
 
-                # Filter question papers based on current time
                 questionpaper = None
                 for qp in questionpapers:
                     if qp.start_time <= current_datetime.time() <= qp.end_time:
@@ -202,36 +201,7 @@ class Answers(APIView):
             return JsonResponse({'data': answerdetails})
         
         
-       
-        
-        
-
-   
     
-class StudentApplicationLogin(APIView):
-
-    def post(self , request , *args , **kwargs):
-        try:
-            roll_no  = request.data.get('roll_no')
-            password = request.data.get('dob')
-
-           
-
-            try:
-                user = Student.objects.get(roll_no = roll_no , dob = password)
-
-            except Student.DoesNotExist:
-                user = None
-           
-            
-            if user is not None :
-                return JsonResponse({'message': 'Login successful'})
-            
-            else:
-                return JsonResponse({'error': 'Invalid credentials'}, status=401)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
 
 class EvaluationLogin(APIView):
     def post(self, request, *args, **kwargs):
