@@ -10,6 +10,7 @@ from .serializers import *
 from rest_framework import status
 from datetime import datetime
 import json
+import pandas as pd
 
 
 
@@ -35,7 +36,45 @@ class AddStudent(APIView):
     else:
         return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-       
+
+
+class UploadExcelStudent(APIView):
+    def post(self, request, *args, **kwargs):
+        excel_file = request.FILES.get('file')
+
+        if not excel_file:
+            return JsonResponse({'error': 'No file uploaded.'}, status=400)
+        
+        try:
+        
+            df = pd.read_excel(excel_file, engine='openpyxl')
+            for _, row in df.iterrows():
+                department_name = row.get('Department')
+               
+                department, _ = Department.objects.get_or_create(department=department_name)
+                
+          
+                Student.objects.update_or_create(
+                    roll_no=row.get('Roll Number'),
+                    defaults={
+                        'studentName': row['Student Name'],
+                        'semester': row.get('Semester', None),
+                        'department': department,
+                        'number': row.get('Contact Number', None),
+                        'email': row['Email'],
+                        'gender': row.get('Gender', None),
+                        'dob': pd.to_datetime(row['DOB (YYYY-MM-DD)']).date() if row.get('DOB (YYYY-MM-DD)', None) else None,
+                        'password': row.get('Password', None),
+                        
+                    }
+                )
+            
+            return JsonResponse({'message': 'Excel file processed successfully.'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+
+
    
 class StudentExaminationLogin(APIView):
     def post(self, request, *args, **kwargs):

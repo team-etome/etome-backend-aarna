@@ -11,5 +11,6 @@ urlpatterns = [
     path('api/submitAnswer',views.Answers.as_view() , name='submitAnswer'),
     path('api/evaluation',views.Evaluations.as_view() , name='evaluation'),
     path('api/EvaluationLogin',views.EvaluationLogin.as_view() , name='EvaluationLogin'),
+    path('api/uploadExcel',views.UploadExcelStudent.as_view() , name='UploadExcelStudent'),
     
 ]
