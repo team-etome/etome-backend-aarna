@@ -13,27 +13,35 @@ import json
 
 
 
+
+
+
+
 class AddStudent(APIView):
    
-  def post(self, request):
-    mobile_number = request.data.get('number')
-    roll_no = request.data.get('roll_no')
-    email=request.data.get('email')
-  
-    if Student.objects.filter(number=mobile_number).exists():
-        return JsonResponse({'message': 'A student with the same mobile number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        mobile_number = request.data.get('number')
+        roll_no = request.data.get('roll_no')
+        email=request.data.get('email')
     
-    if Student.objects.filter(roll_no=roll_no).exists():
-        return JsonResponse({'message': 'A student with the same register number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-    if Student.objects.filter(email=email).exists():
-        return JsonResponse({'message':'a student with same email already exists'},status=status.HTTP_400_BAD_REQUEST)
+        if Student.objects.filter(number=mobile_number).exists():
+            return JsonResponse({'message': 'A student with the same mobile number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Student.objects.filter(roll_no=roll_no).exists():
+            return JsonResponse({'message': 'A student with the same register number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        if Student.objects.filter(email=email).exists():
+            return JsonResponse({'message':'a student with same email already exists'},status=status.HTTP_400_BAD_REQUEST)
+        print(request.data)
+        student_serializer = StudentSerializer(data=request.data)
+        if student_serializer.is_valid():
+            student_serializer.save()
+            return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            print(student_serializer.errors)
+            return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
-    student_serializer = StudentSerializer(data=request.data)
-    if student_serializer.is_valid():
-        student_serializer.save()
-        return JsonResponse({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
-    else:
-        return JsonResponse(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
        
    
@@ -41,68 +49,81 @@ class StudentExaminationLogin(APIView):
     def post(self, request, *args, **kwargs):
         roll_no = request.data.get('roll_no')
         password = request.data.get('password')
-
+        
+       
         try:
             user = Student.objects.get(roll_no=roll_no)
-            if user is not None and check_password(password, user.password):
-                current_datetime = datetime.now() 
-                department_id = user.department_id
-
-                try:
-                    questionpaper = QuestionPaper.objects.get(department_id=department_id, exam_date=current_datetime.date())
-                    questionpaper_id=questionpaper.id
-                    main_question = Questions.objects.filter(questionpaper=questionpaper).first()
-                    blueprint  = Blueprint.objects.get(question_paper =questionpaper_id )
-                    total_questions = int(blueprint.total_questions)
-
-
-                    current_time=current_datetime.time()
-                    start_time=questionpaper.start_time
-                    end_time=questionpaper.end_time
-
-                    if current_time < start_time  :
-                       return JsonResponse({'error': 'exam time out of match'}, status=407)
-                    
-                    if current_time > end_time:
-                       return JsonResponse({'error': 'exam time out of match'}, status=408)
-
-                    
-
-
-                    if not main_question:
-                        return JsonResponse({'error': 'No questions found for the exam'}, status=405)
-
-                    exam_end_datetime = datetime.combine(current_datetime.date(), questionpaper.end_time)
-                    remaining_time = round((exam_end_datetime - current_datetime).total_seconds() / 60)
-                    question_paper_details = {
-                        'student_id': user.id,
-                        'exam_name': questionpaper.exam_name,
-                        'total_time': remaining_time,  
-                        'semester': questionpaper.semester,
-                        'department': questionpaper.department.department,
-                        'subject': questionpaper.subject.subject,
-                        'subject_code': questionpaper.subject.subject_code,
-                        'teacher': questionpaper.teacher.name,
-                        'question_id': main_question.id,
-                        'question_code': main_question.questioncode,
-                        'total_question':total_questions
-                    }
-                    question_image = QuestionImage.objects.get(question=main_question)
-                    response_data = {
-                        'message': 'Login successful',
-                        'question_paper_details': question_paper_details,
-                        'q_image': question_image.image.url
-                    }
-                    return JsonResponse(response_data)
-                except QuestionPaper.DoesNotExist:
-                    return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=405)
-                except QuestionImage.DoesNotExist:
-                    return JsonResponse({'error': 'Question image not found'}, status=403)
-            else:
-                return JsonResponse({'error': 'Invalid credentials'}, status=401)
-
         except Student.DoesNotExist:
-            return JsonResponse({'error': 'Student not found'}, status=404)
+            return JsonResponse({'error': 'Student not found'}, status=409)
+        current_date = datetime.now().date()
+
+        current_time = datetime.now().time()
+        department=user.department_id
+        student_id=user.id
+        questions=QuestionPaper.objects.filter(department_id=department,exam_date=current_date)
+        for question in questions:
+         if current_time >= question.start_time and current_time <= question.end_time:                
+            if Answer.objects.filter(student_id=student_id,question_id=question.id).exists():
+                    return JsonResponse({'error': 'Student already written the exam'}, status=404)
+        
+
+
+        if user is not None and check_password(password, user.password):
+            current_datetime = datetime.now()
+            department_id = user.department_id
+
+            try:
+                # Get all question papers for the department and current date
+                questionpapers = QuestionPaper.objects.filter(department_id=department_id, exam_date=current_datetime.date())
+
+                # Filter question papers based on current time
+                questionpaper = None
+                for qp in questionpapers:
+                    if qp.start_time <= current_datetime.time() <= qp.end_time:
+                        questionpaper = qp
+                        break
+
+                if questionpaper is None:
+                    return JsonResponse({'error': 'No exam scheduled for now or for this department'}, status=405)
+
+                questionpaper_id = questionpaper.id
+                main_question = Questions.objects.filter(questionpaper=questionpaper).first()
+                blueprint = Blueprint.objects.get(question_paper=questionpaper_id)
+                total_questions = int(blueprint.total_questions)
+
+                exam_end_datetime = datetime.combine(current_datetime.date(), questionpaper.end_time)
+                remaining_time = round((exam_end_datetime - current_datetime).total_seconds() / 60)
+                question_paper_details = {
+                    'student_id': user.id,
+                    'exam_name': questionpaper.exam_name,
+                    'total_time': remaining_time,
+                    'semester': questionpaper.semester,
+                    'department': questionpaper.department.department,
+                    'subject': questionpaper.subject.subject,
+                    'subject_code': questionpaper.subject.subject_code,
+                    'teacher': questionpaper.teacher.name,
+                    'question_id': main_question.id,
+                    'question_code': main_question.questioncode,
+                    'total_question': total_questions
+                }
+
+                question_image = QuestionImage.objects.get(question=main_question)
+                response_data = {
+                    'message': 'Login successful',
+                    'question_paper_details': question_paper_details,
+                    'q_image': question_image.image.url
+                }
+            
+                return JsonResponse(response_data)
+            except QuestionPaper.DoesNotExist:
+                return JsonResponse({'error': 'No exam scheduled for today or for this department'}, status=405)
+            except QuestionImage.DoesNotExist:
+                return JsonResponse({'error': 'Question image not found'}, status=403)
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+
+
+        
         
 class Answers(APIView):
 
@@ -155,6 +176,8 @@ class StudentApplicationLogin(APIView):
             roll_no  = request.data.get('roll_no')
             password = request.data.get('dob')
 
+           
+
             try:
                 user = Student.objects.get(roll_no = roll_no , dob = password)
 
@@ -171,8 +194,6 @@ class StudentApplicationLogin(APIView):
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-
-
 class EvaluationLogin(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
@@ -186,6 +207,7 @@ class EvaluationLogin(APIView):
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
             assigned_evaluations = AssignEvaluation.objects.filter(teacher=teacher)
+            print(assigned_evaluations)
             if not assigned_evaluations:
              return JsonResponse({'error': 'No assigned evaluations'}, status=status.HTTP_404_NOT_FOUND)
             answer_details = []
@@ -232,17 +254,19 @@ class EvaluationLogin(APIView):
                         
                     })
 
-                if not answer_details:
-                 return JsonResponse({'error': 'No students found, no assigned evaluations, or no answers present'}, status=status.HTTP_404_NOT_FOUND)
+                # if not answer_details:
+                #  return JsonResponse({'error': 'No students found, no assigned evaluations, or no answers present'}, status=status.HTTP_404_NOT_FOUND)
 
             return JsonResponse(answer_details, safe=False)
 
         except Teacher.DoesNotExist:
-            return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({'error': 'Teacher not found'}, status=status.HTTP_401_UNAUTHORIZED)
         
         
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 
@@ -275,7 +299,7 @@ class Evaluations(APIView):
 
         for eval in evaluations:
             evaluations_list.append({
-                'student_name': eval.answer.student.studentName if eval.answer.student else None,
+                'student_name': eval.answer.student.student_name if eval.answer.student else None,
                 'subject_name': eval.answer.question.questionpaper.subject.subject if eval.answer.question.questionpaper.subject else None,
                 'department_name': eval.answer.question.questionpaper.department.department if eval.answer.question.questionpaper.department else None,
                 'teacher_name': eval.teacher.name if eval.teacher else None,

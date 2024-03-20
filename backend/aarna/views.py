@@ -63,6 +63,7 @@ class EvaluationAssign(APIView):
         try:
             department = Department.objects.get(department=department_name)
             subject = Subject.objects.get(id=subject_id)
+            print(subject)
             students = Student.objects.filter(department=department).values_list('roll_no', flat=True)
             teachers = Teacher.objects.filter(id__in=data.get('teacher', []))
             if not  students.exists():
@@ -77,7 +78,7 @@ class EvaluationAssign(APIView):
                     defaults={
                         'students': json.dumps(student_roll_numbers),
                         'endDate': endDate,
-                        'term': term
+                        'term': term,
                     }
                 )
             return JsonResponse({'message': 'AssignEvaluation objects updated or created successfully'})
@@ -143,7 +144,7 @@ class HallTicket(APIView):
 
             }
 
-        
+            print(response_data,"rrrrrrrrrrrrrrrrrrrrrrr")
 
             return JsonResponse(response_data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
@@ -217,6 +218,7 @@ class InvgilatorLogin(APIView):
             seating_arrangement_details.append({
                 'hall_name': seating.hall_name,
                 'department_students': seating.department_students,
+                'pattern':seating.pattern,
             })
         question_paper_details = []
         department_ids = [json.loads(seating.department_ids) for seating in seating_arrangements if seating.department_ids]

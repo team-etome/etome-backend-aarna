@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .manager import UserManager
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 
 
@@ -76,8 +78,9 @@ class Teacher(models.Model):
 
 
 
+   
 class Student(models.Model):
-    studentName           =  models.CharField(max_length=50)
+    student_name           =  models.CharField(max_length=50)
     roll_no               =  models.CharField(max_length=100,unique=True)
     semester              =  models.CharField(max_length=100,null=True , blank=True)
     department            =  models.ForeignKey(Department ,on_delete=models.CASCADE , null=True , blank=True)
@@ -86,7 +89,7 @@ class Student(models.Model):
     gender                =  models.CharField(max_length=15 ,blank= True , null = True)
     dob                   =  models.DateField(null = True , blank = True )
     password              =  models.CharField(max_length = 100 , null = True , blank = True)
-    image                 =  models.ImageField(blank=True,null=True , upload_to='student')
+    image = models.ImageField(max_length=1024, blank=True, null=True)   
     selected              =  models.BooleanField(default = False) 
 
 class QuestionPaper(models.Model):
