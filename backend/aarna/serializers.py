@@ -14,3 +14,11 @@ class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model=Attendance
         fields=['sign_data','student','time_table']
+
+
+
+class McqQuestionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model=McqQuestion
+        fields=['question','subject','date','answer','id']
