@@ -17,28 +17,8 @@ from django.core.files.base import ContentFile
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from datetime import datetime
+from django.db import transaction
 
-
-
-# class Timetable(APIView):
-#     def get(self, request):
-#         try:
-#             questionpapers = QuestionPaper.objects.all().order_by('exam_date')
-#             for questionpaper in questionpapers:
-#                 try:
-#                     TimeTable.objects.create(
-#                         exam_name=questionpaper.exam_name,
-#                         department=questionpaper.department.department,
-#                         subject=questionpaper.subject.subject,
-#                         exam_date=questionpaper.exam_date,
-                       
-#                     )
-#                 except Exception as e:
-#                     return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#             return JsonResponse("Timetable entries created successfully", status=status.HTTP_200_OK)
-#         except Exception as e:
-          
-#             return JsonResponse(f"An error occurred: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class EvaluationAssign(APIView):
@@ -299,10 +279,77 @@ class Attendanceview(APIView):
 
 
 
+class CreateMcqQuestion(APIView):
+    def post(self, request, *args, **kwargs):
+        question_data = {
+            'question': request.data.get('question'),
+            'options': request.data.get('options')  
+        }
+        subject = request.data.get('subject')
+        date = request.data.get('date')
+        correctAnswer = request.data.get('correctAnswer') 
+
+     
+        
+        mcq_question = McqQuestion.objects.create(
             
+            question=question_data,
+            subject=subject,
+            date=date,
+            answer=correctAnswer
+        )
 
+        return Response({'message': 'MCQ question created successfully.'}, status=status.HTTP_201_CREATED)
         
 
-        
+class McqLogin(APIView):
 
+    def post(self, request, *args, **kwargs):
+        roll_no = request.data.get('roll_no')
+        password = request.data.get('password')
+
+        try:
+            user = Student.objects.get(roll_no=roll_no)
+            if user and check_password(password, user.password):
+                mcq_questions = McqQuestion.objects.order_by('?')
+                serialized_questions = McqQuestionSerializer(mcq_questions, many=True).data
+                questions_data = [{'id': question['id'], 'question': question['question']} for question in serialized_questions]
+                return JsonResponse({'questions': questions_data})
+
+        except Student.DoesNotExist:
+            return JsonResponse({'error': 'Student not found'}, status=404)
+
+        return JsonResponse({'error': 'Invalid credentials'}, status=401)
+    
+
+    
+class McqEvaluation(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        roll_no = data.get('roll_no')
+        questions = data.get('questions', [])
         
+        try:
+            student = Student.objects.get(roll_no=roll_no)
+        except Student.DoesNotExist:
+            return JsonResponse({'error': 'Student not found'}, status=404)
+        
+        score = 0
+        
+        with transaction.atomic():
+            for item in questions:
+                question_data = item.get('question', {})
+                question_id = question_data.get('id')
+                selected_option = question_data.get('selectedOption')
+                try:
+                    question = McqQuestion.objects.get(id=question_id)
+                    if question.answer == selected_option:
+                        score += 4
+                    else:
+                        score -= 1
+                except McqQuestion.DoesNotExist:
+                   
+                    pass
+            McqResult.objects.create(student=student, marks=score)
+            return JsonResponse({'message': 'Results saved successfully', 'score': score})
+       

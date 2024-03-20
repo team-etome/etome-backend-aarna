@@ -66,3 +66,15 @@ class SeatingArrangement(models.Model):
     seating_layout       =  models.CharField(max_length = 50, null = True , blank = True)
     department_students  =  models.JSONField(null=True, blank=True)
     department_ids       = models.JSONField(null = True , blank = True)
+
+
+
+class McqQuestion(models.Model):
+    question   = models.JSONField(max_length=255)  
+    subject    = models.CharField(max_length=100)  
+    date       = models.DateField()
+    answer     = models.CharField(max_length=20)  
+
+class McqResult(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    marks = models.IntegerField()
