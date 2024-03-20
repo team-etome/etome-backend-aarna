@@ -291,6 +291,51 @@ class SeatingArrangementView(APIView):
         columned_seating_arrangement = [seating_arrangement[i:i + cols] for i in range(0, len(seating_arrangement), cols)]
 
         return columned_seating_arrangement, vacant_seats
+    # def patterned_distribution(self, cols, rows, student_per_table, department_ids, pattern):
+    #     if department_ids is None:
+    #         department_ids = Department.objects.all().values_list('id', flat=True)
+    #     department_codes_per_department = Department.objects.filter(id__in=department_ids).values('id', 'department_code')
+    #     department_id_to_code = {dept['id']: dept['department_code'] for dept in department_codes_per_department}
+    #     student_ids_per_department = {}
+    #     for department_id in department_ids:
+    #         student_ids = list(Student.objects.filter(department_id=department_id).order_by('roll_no').values_list('roll_no', flat=True))
+    #         student_ids_per_department[department_id] = student_ids
+    #     total_capacity_of_hall = student_per_table * rows
+    #     departments = len(department_ids)
+    #     department_labels = list(department_ids)
+    #     shuffle(department_labels)
+    #     total_students_from_each_department = total_capacity_of_hall // departments
+    #     seating_arrangement = []
+    #     vacant_seats = 0
+    #     if pattern == 'horizontal':
+    #         for t in range(rows):
+    #             table = []
+    #             for s in range(student_per_table):
+    #                 department_index = (t * student_per_table + s) % departments
+    #                 department_id = department_labels[department_index]
+    #                 department_code = department_id_to_code.get(department_id,"h")
+    #                 if student_ids_per_department[department_id]:
+    #                     seat_label = f"{department_code}-{student_ids_per_department[department_id].pop(0)}"
+    #                 else:
+    #                     seat_label = "Vacant-0"
+    #                     vacant_seats += 1
+    #                 table.append(seat_label)
+    #             seating_arrangement.append(table)
+    #     elif pattern == 'vertical':
+    #         for c in range(cols):
+    #             column = []
+    #             for t in range(rows):
+    #                 department_index = (t * cols + c) % departments
+    #                 department_id = department_labels[department_index]
+    #                 department_code = department_id_to_code.get(department_id, "h")
+    #                 if student_ids_per_department[department_id]:
+    #                     seat_label = f"{department_code}-{student_ids_per_department[department_id].pop(0)}"
+    #                 else:
+    #                     seat_label = "Vacant-0"
+    #                     vacant_seats += 1
+    #                 column.append(seat_label)
+    #             seating_arrangement.append(column)
+    #     return seating_arrangement, vacant_seats
     
 
     def sequential_distribution(self, cols, rows, student_per_table, department_ids):
@@ -336,9 +381,11 @@ class SeatingArrangementView(APIView):
         pattern      = data.get('pattern')
         teacher      =data.get('teacher')
         exam_name    =data.get('exam_name')
+        exam_date=data.get('exam_date')
 
 
         hall_name=data.get('hallName')
+        
         department_ids = [int(id) for id in data.get('departments', [])]
 
         if SeatingArrangement.objects.filter(teacher_id__in=teacher,exam_date=exam_date).exists():
@@ -374,7 +421,9 @@ class SeatingArrangementView(APIView):
 
         rows = int(data.get('rows'))
         cols = int(data.get('cols'))
+        pattern=data.get('pattern')
         students_per_bench = int(data.get('studentsPerBench'))
+        print(rows,cols,students_per_bench)
        
         exam_date_obj = datetime.strptime(exam_date, '%Y-%m-%d').date()
    

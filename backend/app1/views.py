@@ -388,8 +388,10 @@ class AddTeacher(APIView):
                 teacher = teacher_serializer.save()
                 return JsonResponse({'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
             else:
-                print(teacher_serializer.errors , "errorssssssssssssssssssss")
                 return JsonResponse(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
         
 
