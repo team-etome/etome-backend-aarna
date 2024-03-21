@@ -77,4 +77,4 @@ class McqQuestion(models.Model):
 
 class McqResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    marks = models.IntegerField()
+    marks   = models.IntegerField()
