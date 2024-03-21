@@ -324,6 +324,7 @@ class McqLogin(APIView):
 
     
 class McqEvaluation(APIView):
+
     def post(self, request, *args, **kwargs):
         data = request.data
         roll_no = data.get('roll_no')
@@ -352,4 +353,23 @@ class McqEvaluation(APIView):
                     pass
             McqResult.objects.create(student=student, marks=score)
             return JsonResponse({'message': 'Results saved successfully', 'score': score})
+        
+
+    def get(self, request):
+
+        results = McqResult.objects.all()
+        evaluation_result = []
+        for result in results:
+            
+            evaluation_result.append(
+                {
+                    'student_name': result.student.student_name,
+                    'mark'        : result.marks
+
+                }
+            )
+        return JsonResponse(evaluation_result, safe=False, status=status.HTTP_200_OK)
+
+
+
        
